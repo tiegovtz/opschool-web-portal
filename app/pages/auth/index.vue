@@ -7,6 +7,7 @@ import { useNavigationStore } from "~/stores/navigationStore";
 import { useAuthStore } from "~/stores/auth";
 import { consumePostLoginHome } from "~/utilities/postLoginHome";
 import { getHubPath } from "~/utilities/educationRoute";
+import { getLoginFailure, readLoginLockout, remainingLoginLockoutSeconds } from "~/utilities/loginLockout";
 
 // // Use the State
 const navigationStore = useNavigationStore();
@@ -50,27 +51,27 @@ const content = computed(() => ({
   signingIn: isSwahili.value ? "Inaingia, tafadhali subiri" : "Signing in, please wait",
   noAccount: isSwahili.value ? "Huna akaunti?" : "Don't have an account?",
   signUp: isSwahili.value ? "Jisajili" : "Sign up",
-  tooManyAttempts: isSwahili.value
-    ? "Umejaribu kuingia mara"
-    : "You have attempted to sign in",
-  tooManyAttemptsSuffix: isSwahili.value
-    ? "Tafadhali weka upya nenosiri lako au fungua akaunti mpya."
-    : "times. Please reset your password or register a new account.",
-  resetPassword: isSwahili.value ? "Weka upya nenosiri" : "Reset your password",
-  registerNewAccount: isSwahili.value ? "Sajili akaunti mpya" : "Register a new account",
-  signInErrorAria: isSwahili.value ? "Hitilafu ya kuingia" : "Sign in error",
-  resetPasswordAria: isSwahili.value
-    ? "Tembelea ukurasa wa kuweka upya nenosiri kama hukumbuki nenosiri lako"
-    : "Visit the reset password page if you do not remember your password",
-  registerAria: isSwahili.value
-    ? "Tembelea ukurasa wa usajili kama huna akaunti"
-    : "Visit the registration page if you do not have an account",
+  accountLocked: isSwahili.value ? "Akaunti imefungwa kwa muda" : "Account temporarily locked",
+  lockoutReason: isSwahili.value
+    ? "Umejaribu kuingia bila mafanikio mara nyingi."
+    : "Too many unsuccessful sign-in attempts.",
+  retryIn: isSwahili.value ? "Tafadhali jaribu tena baada ya" : "Please try again in",
+  lockoutEnded: isSwahili.value ? "Unaweza kujaribu kuingia tena sasa." : "You can try signing in again now.",
   errors: {
     usernameInvalid: isSwahili.value
       ? "Taarifa ya kuingia si sahihi. Tumia barua pepe, namba ya simu, Prem Number ya mwanafunzi, au jina la mtumiaji."
       : "Sign-in ID is not valid (use email, phone number, Prem Number, or username)",
     passwordRequired: isSwahili.value ? "Nenosiri linahitajika" : "Password is required",
     invalidCredentials: isSwahili.value ? "Jina la mtumiaji au nenosiri si sahihi" : "Invalid username or password",
+    retryLater: isSwahili.value
+      ? "Umejaribu kuingia mara nyingi. Tafadhali subiri kabla ya kujaribu tena."
+      : "Too many sign-in attempts. Please wait before trying again.",
+    connection: isSwahili.value
+      ? "Imeshindikana kuunganisha. Angalia muunganisho wako kisha ujaribu tena."
+      : "Unable to connect. Check your connection and try again.",
+    unavailable: isSwahili.value
+      ? "Imeshindikana kuingia kwa sasa. Tafadhali jaribu tena baadaye."
+      : "Unable to sign in right now. Please try again later.",
     verificationRequired: isSwahili.value
       ? "Akaunti ya msimamizi haiwezi kuingia hapa. Tembelea mfumo wa wasimamizi."
       : "Administrator accounts cannot sign in here. Please visit administrator's portal.",
@@ -83,18 +84,36 @@ const content = computed(() => ({
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
 
+// Persist an absolute deadline so reloads and background tabs cannot restart the wait.
+const initialLockoutNow = useState("auth-lockout-now", () => Date.now());
+const lockoutNow = ref(initialLockoutNow.value);
+const lockoutExpiry = ref();
+const lockoutCookie = useCookie("signInLockout", {
+  default: () => null,
+  sameSite: "strict",
+  secure: useRequestURL().protocol === "https:",
+  path: "/auth",
+  expires: () => lockoutExpiry.value,
+});
+watch(lockoutCookie, (value) => {
+  const state = readLoginLockout(value, Date.now());
+  lockoutExpiry.value = state ? new Date(state.expiresAt) : undefined;
+}, { immediate: true, flush: "sync" });
+const restoredLockout = readLoginLockout(lockoutCookie.value, lockoutNow.value);
+
 // User Sign In Function
 const userSignIn = reactive({
   type: "",
   status: "idle",
-  username: userRememberMe.value?.username ?? null,
-  password: pass ?? null,
+  username: restoredLockout?.username ?? userRememberMe.value?.username ?? null,
+  password: !restoredLockout || restoredLockout.username === userRememberMe.value?.username?.trim()
+    ? pass ?? null
+    : null,
   rememberMe: userRememberMe.value?.rememberMe ?? false,
   controller: {
     isSubmitted: false,
     isSucces: false,
     feedback: null,
-    attemps: 0,
     errors: {
       username: "",
       password: "",
@@ -103,9 +122,32 @@ const userSignIn = reactive({
   },
 });
 
+const lockoutSeconds = computed(() =>
+  remainingLoginLockoutSeconds(lockoutCookie.value, userSignIn.username, lockoutNow.value),
+);
+const isLocked = computed(() => lockoutSeconds.value > 0);
+const lockoutCountdown = computed(() => {
+  const minutes = Math.floor(lockoutSeconds.value / 60);
+  const seconds = lockoutSeconds.value % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+});
+const lockoutFinished = ref(false);
+const updateLockoutClock = () => {
+  const now = Date.now();
+  const current = lockoutCookie.value;
+  if (current && !readLoginLockout(current, now)) {
+    if (readLoginLockout(current, 0)?.username === userSignIn.username?.trim()) {
+      lockoutFinished.value = true;
+    }
+    lockoutCookie.value = null;
+  }
+  lockoutNow.value = now;
+};
+
 // Sign In Function
 const signIn = async () => {
-  if (isDisable.value || userSignIn.controller.attemps >= 3) return;
+  updateLockoutClock();
+  if (isDisable.value || isLocked.value) return;
 
   // Reset error messages first
   userSignIn.controller.errors.username = "";
@@ -128,20 +170,18 @@ const signIn = async () => {
   if (isValid) {
     // Form is valid, proceed with submission
     isDisable.value = true;
+    lockoutFinished.value = false;
+    userSignIn.controller.feedback = null;
+    userSignIn.controller.isSucces = false;
 
     // send data
     try {
-      // const response = await axios.post(apiDocs.auth.login, {
-      //   username: sanitize.input(userSignIn.username),
-      //   password: userSignIn.password,
-      // });
-
-
       const response = await $fetch(apiDocs.auth.login,
         {
           method: 'POST',
+          retry: 0,
           body: JSON.stringify({
-            username: sanitize.input(userSignIn.username),
+            username: sanitize.input(username),
             password: userSignIn.password,
           })
         }
@@ -150,16 +190,17 @@ const signIn = async () => {
       if (response?.twoFactorRequired === true) {
         userSignIn.controller.feedback = content.value.errors.verificationRequired;
         userSignIn.controller.isSucces = false;
-        isDisable.value = false;
         return;
       }
 
       const issuedAccessToken = response?.accessToken ?? response?.access_token;
       const issuedRefreshToken = response?.refreshToken ?? response?.refresh_token;
       if (typeof issuedAccessToken !== 'string' || !issuedAccessToken.trim()) {
-        throw new Error('Sign-in response is missing an access token.');
+        userSignIn.controller.feedback = content.value.errors.unavailable;
+        return;
       }
 
+      if (lockoutCookie.value?.username === username) lockoutCookie.value = null;
       userSignIn.controller.feedback = content.value.feedback.authenticated;
       userSignIn.controller.isSucces = true;
 
@@ -225,14 +266,30 @@ const signIn = async () => {
       const landingChoiceHome = consumePostLoginHome();
       const fallbackHubPath = getHubPath(hubEducationLevel.value);
       await router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
-      isDisable.value = false;
     } catch (error) {
-      userSignIn.controller.attemps++;
-      userSignIn.controller.feedback = content.value.errors.invalidCredentials;
+      const { status, retryAfterSeconds } = getLoginFailure(error);
+      userSignIn.controller.isSucces = false;
+      if (status === 429 && retryAfterSeconds !== null) {
+        const now = Date.now();
+        const state = readLoginLockout({ username, expiresAt: now + retryAfterSeconds * 1000 }, now);
+        if (state) {
+          lockoutNow.value = now;
+          lockoutExpiry.value = new Date(state.expiresAt);
+          lockoutCookie.value = state;
+        } else {
+          userSignIn.controller.feedback = content.value.errors.retryLater;
+        }
+      } else if (status === 429) {
+        userSignIn.controller.feedback = content.value.errors.retryLater;
+      } else if (status === 400 || status === 401) {
+        userSignIn.controller.feedback = content.value.errors.invalidCredentials;
+      } else {
+        userSignIn.controller.feedback = status
+          ? content.value.errors.unavailable
+          : content.value.errors.connection;
+      }
+    } finally {
       isDisable.value = false;
-
-      console.error("[Auth Error]:", error);
-
     }
   }
 };
@@ -247,7 +304,17 @@ const togglePassword = () => {
   showPassword.value = !showPassword.value;
 };
 
+let lockoutTimer;
+const startLockoutClock = () => {
+  window.clearInterval(lockoutTimer);
+  updateLockoutClock();
+  lockoutTimer = window.setInterval(updateLockoutClock, 1000);
+};
 onMounted(() => {
+  startLockoutClock();
+  window.addEventListener("pageshow", startLockoutClock);
+  window.addEventListener("focus", updateLockoutClock);
+  document.addEventListener("visibilitychange", updateLockoutClock);
   // Move focus to the heading when the sign-in page mounts
   headingRef.value?.focus();
 
@@ -263,10 +330,20 @@ onMounted(() => {
   }
 });
 
+onBeforeUnmount(() => {
+  window.clearInterval(lockoutTimer);
+  window.removeEventListener("pageshow", startLockoutClock);
+  window.removeEventListener("focus", updateLockoutClock);
+  document.removeEventListener("visibilitychange", updateLockoutClock);
+});
+
 // Clear validation errors when user types
 watch(
   () => userSignIn.username,
   (username) => {
+    userSignIn.controller.feedback = null;
+    userSignIn.controller.isSucces = false;
+    lockoutFinished.value = false;
     if (username) {
       const trimmedUsername = username.trim();
       if (trimmedUsername && auth.checkEmailPhoneOrUsername(trimmedUsername)) {
@@ -293,13 +370,13 @@ watch(
 </script>
 
 <template>
-  <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" aria-labelledby="signin-paging">
+  <section class="flex min-h-screen items-center justify-center py-6 md:bg-gradient-to-b" aria-labelledby="Welcome">
     <!-- Message Component (announce feedback changes) -->
     <MessageComponent aria-live="assertive" role="status" :message="userSignIn.controller.feedback"
       :position="!!userSignIn.controller.feedback" :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
       :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
-    <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
+    <div class="w-full max-w-md rounded-lg px-4 py-6 md:bg-white md:shadow-2xl">
       <!-- Main heading for this view -->
       <h1 id="Welcome" ref="headingRef" tabindex="-1" class="font-bold text-center text-large">
         {{ content.title }}
@@ -317,8 +394,8 @@ watch(
       </p>
 
       <!-- Sign in form -->
-      <form v-if="userSignIn.controller.attemps < 3" @submit.prevent="signIn" autocomplete="off"
-        class="px-4 overflow-hidden text-textGray text-extraSmall" aria-describedby="signin-helper">
+      <form @submit.prevent="signIn" autocomplete="off"
+        class="px-4 text-textGray text-extraSmall" aria-describedby="signin-helper">
         <!-- Helper text (optional, can be expanded) -->
         <p id="signin-helper" class="sr-only">
           {{ content.helper }}
@@ -337,7 +414,7 @@ watch(
           </label>
 
           <div class="flex items-center w-full">
-            <input id="username" type="text" v-model="userSignIn.username" name="username" autocomplete="username"
+            <input id="username" type="text" v-model="userSignIn.username" name="username" autocomplete="username" :disabled="isDisable"
               :aria-invalid="!!userSignIn.controller.errors.username" aria-describedby="username-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               :placeholder="content.usernamePlaceholder" />
@@ -371,7 +448,7 @@ watch(
 
           <div class="flex items-center w-full gap-2">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
-              name="password" autocomplete="current-password" aria-describedby="password-error"
+              name="password" autocomplete="current-password" aria-describedby="password-error" :disabled="isDisable"
               :aria-invalid="!!userSignIn.controller.errors.password" :placeholder="content.passwordPlaceholder"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs" />
 
@@ -392,7 +469,7 @@ watch(
         </div>
 
         <!-- Forgot / Remember -->
-        <div class="flex items-center justify-between my-6">
+        <div v-if="!isLocked" class="flex items-center justify-between my-6">
           <NuxtLink to="/auth/ForgotPassword"
             class="text-sm cursor-pointer text-textGray underline-offset-2 hover:underline">
             {{ content.forgotPassword }}
@@ -406,8 +483,19 @@ watch(
           </div>
         </div>
 
+        <div v-if="isLocked" class="rounded-md border border-deepBlue/20 bg-oceanBlue/10 p-4 text-center text-darkBlue">
+          <div role="alert">
+            <p class="font-semibold">{{ content.accountLocked }}</p>
+            <p class="mt-1 text-textGray">{{ content.lockoutReason }}</p>
+          </div>
+          <p id="signin-lockout" class="mt-2" aria-live="off">
+            {{ content.retryIn }} <span class="font-semibold tabular-nums text-deepBlue">{{ lockoutCountdown }}</span>
+          </p>
+        </div>
+        <p v-if="lockoutFinished" role="status" class="mb-4 text-center">{{ content.lockoutEnded }}</p>
+
         <!-- Sign in button -->
-        <button type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
+        <button v-if="!isLocked" type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
           :aria-busy="isDisable ? 'true' : 'false'"
           class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
           <span v-if="!isDisable">{{ content.signIn }}</span>
@@ -422,7 +510,7 @@ watch(
         </p>
 
         <!-- Sign up -->
-        <div class="flex flex-col items-center gap-4 my-4">
+        <div v-if="!isLocked" class="flex flex-col items-center gap-4 my-4">
           <p class="text-sm text-textGray">{{ content.noAccount }}</p>
           <NuxtLink :to="{ path: '/auth/SignUp', query: authRedirectQuery }"
             class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80">
@@ -430,31 +518,6 @@ watch(
           </NuxtLink>
         </div>
       </form>
-
-      <!-- Too many attempts state -->
-      <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="assertive" role="alert"
-        :aria-label="content.signInErrorAria">
-        <div class="py-3 text-center">
-          {{ content.tooManyAttempts }}
-          <span class="text-oceanBlue">
-            {{ userSignIn.controller.attemps }}
-          </span>
-          {{ content.tooManyAttemptsSuffix }}
-        </div>
-
-        <NuxtLink :aria-label="content.resetPasswordAria"
-          to="/auth/ForgotPassword"
-          class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
-          {{ content.resetPassword }}
-        </NuxtLink>
-
-        <span>or</span>
-
-        <NuxtLink :aria-label="content.registerAria" :to="{ path: '/auth/SignUp', query: authRedirectQuery }"
-          class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
-          {{ content.registerNewAccount }}
-        </NuxtLink>
-      </div>
     </div>
   </section>
 </template>
