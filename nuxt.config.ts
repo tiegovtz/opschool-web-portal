@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { vite as vidstack } from "vidstack/plugins";
+import { clearDevServiceWorker } from "./scripts/clear-dev-service-worker.mjs";
 
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
@@ -120,13 +121,29 @@ export default defineNuxtConfig({
   // "Use efficient cache lifetimes"). _nuxt/** filenames are content-hashed
   // by Vite, so a 1-year immutable cache is safe; unhashed public assets
   // (images, local fonts, pwa icons) get a shorter cache instead.
-  routeRules: {
-    "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
-    "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+  $production: {
+    routeRules: {
+      "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+      "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+    },
+  },
+  $development: {
+    routeRules: {
+      "/_nuxt/**": { headers: { "cache-control": "no-store" } },
+    },
+    app: {
+      head: {
+        script: [{
+          key: "clear-dev-service-worker",
+          tagPriority: "critical",
+          innerHTML: `(${clearDevServiceWorker.toString()})().catch(error => console.warn('[dev] Service worker cleanup failed:', error));`,
+        }],
+      },
+    },
   },
 
   hooks: {

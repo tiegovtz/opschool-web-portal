@@ -25,7 +25,11 @@ export function feedbackSupportApiURLs(value: string) {
 const upstreamBaseURL =
   import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
-export const createApiDocs = (baseURL: string, assetBaseURL = baseURL) => ({
+export const createApiDocs = (apiBaseURL: string, assetBaseURL = apiBaseURL) => {
+  // SSR calls the upstream directly, where a trailing slash would create
+  // paths such as /api/v1//topics/:id that need not match backend routes.
+  const baseURL = apiBaseURL.trim().replace(/\/+$/, '');
+  return {
   // Keep existing asset URL builders pointed at the upstream media server.
   baseURL: assetBaseURL,
   requestBaseURL: baseURL,
@@ -236,7 +240,8 @@ export const createApiDocs = (baseURL: string, assetBaseURL = baseURL) => ({
     streamingLinks: `${baseURL}/live-classrooms/streaming-links`,
     session: `${baseURL}/live-classrooms/sessions`,
   },
-});
+  };
+};
 
 const apiDocs = createApiDocs(import.meta.client ? "/api/backend/v1" : upstreamBaseURL, upstreamBaseURL);
 export default apiDocs;
