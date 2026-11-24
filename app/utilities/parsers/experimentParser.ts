@@ -1,7 +1,7 @@
 import { activityPopupId, experimrntUrl } from "../controlls";
 import { resolveMediaUrl } from "./mediaUrl";
 
-const experimentParser = (query: string, uploadsBaseUrl: string = ""): string => {
+const experimentParser = (query: string): string => {
     // Regular expression to match expPackage and associated <img>
     const regex = /expPackage="([^"]+)",&lt;img src="([^"]+)" alt="([^"]+)"&gt;/g;
 

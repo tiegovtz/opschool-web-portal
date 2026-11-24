@@ -46,22 +46,8 @@ const videoParser = (query: string): string => {
   });
 };
 
-// bare <img> tags (not part of a model=/expPackage= composite string, which
-// stay as escaped text until modelParser/experimentParser run after this)
-const imageParser = (html: string, uploadsBaseUrl: string = ""): string => {
-  const doc = parseHTML(html);
-
-  doc.querySelectorAll("img").forEach((img) => {
-    const src = img.getAttribute("src");
-    if (!src) return;
-    img.setAttribute("src", resolveUploadUrl(src, uploadsBaseUrl));
-  });
-
-  return doc.body.innerHTML;
-};
-
 // audio parser
-const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
+const audioParser = (html: string): string => {
   const doc = parseHTML(html);
 
   const audios = doc.querySelectorAll("audio");
@@ -74,7 +60,7 @@ const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
       src = source?.getAttribute("src") ?? null;
     }
     if (!src) return;
-    src = resolveUploadUrl(src, uploadsBaseUrl);
+    src = resolveMediaUrl(src);
     const wrapper = doc.createElement("div");
     wrapper.className = "audio-canvas-wrapper inline-block";
     wrapper.innerHTML = `
@@ -102,6 +88,7 @@ const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
   return doc.body.innerHTML;
 };
 
+// Bare <img> tags; model and experiment composites stay escaped until their parsers run.
 const imageParser = (html: string): string => {
   const doc = parseHTML(html);
   doc.querySelectorAll("img[src]").forEach((image) => {
