@@ -22,8 +22,12 @@ export function feedbackSupportApiURLs(value: string) {
   };
 }
 
+// Falls back to a gateway-relative path (not an absolute host) so
+// environments that leave VITE_API_BASE_URL unset still resolve assets
+// (profile pictures, etc.) against their own gateway instead of a
+// hardcoded, potentially unreachable host.
 const upstreamBaseURL =
-  import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
+  import.meta.env?.VITE_API_BASE_URL || "/api/v1";
 
 export const createApiDocs = (apiBaseURL: string, assetBaseURL = apiBaseURL) => {
   // SSR calls the upstream directly, where a trailing slash would create
