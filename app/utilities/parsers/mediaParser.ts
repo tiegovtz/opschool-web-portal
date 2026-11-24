@@ -48,6 +48,20 @@ const videoParser = (query: string): string => {
   });
 };
 
+// bare <img> tags (not part of a model=/expPackage= composite string, which
+// stay as escaped text until modelParser/experimentParser run after this)
+const imageParser = (html: string, uploadsBaseUrl: string = ""): string => {
+  const doc = parseHTML(html);
+
+  doc.querySelectorAll("img").forEach((img) => {
+    const src = img.getAttribute("src");
+    if (!src) return;
+    img.setAttribute("src", resolveUploadUrl(src, uploadsBaseUrl));
+  });
+
+  return doc.body.innerHTML;
+};
+
 // audio parser
 const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
   const doc = parseHTML(html);
@@ -93,7 +107,8 @@ const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
 // combime both media parsers
 const mediaParser = (html: string, uploadsBaseUrl: string = ""): string => {
   let parsedHTML = videoParser(html);
+  parsedHTML = imageParser(parsedHTML, uploadsBaseUrl);
   parsedHTML = audioParser(parsedHTML, uploadsBaseUrl);
   return parsedHTML;
 };
-export { videoParser, audioParser, mediaParser };
+export { videoParser, audioParser, imageParser, mediaParser };
