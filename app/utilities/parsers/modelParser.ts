@@ -1,15 +1,15 @@
-import { resolveUploadUrl } from "../resolveUploadUrl";
+import { resolveMediaUrl } from "./mediaUrl";
 
-const modelParser = (query: String, uploadsBaseUrl: string = "") => {
+const modelParser = (query:String) => {
     // Regular expression to match the model and image URLs along with any attributes
     const regex = /model="([^"]+)",&lt;img src="([^"]+)" alt="([^"]+)"&gt;/g;
 
     // Replace matching patterns with <model-viewer> element
     return query.replace(regex, (match, modelSrc, imgSrc, altText) => {
         return `<model-viewer
-
-              src="${resolveUploadUrl(modelSrc, uploadsBaseUrl)}"
-              poster="${resolveUploadUrl(imgSrc, uploadsBaseUrl)}"
+                
+              src="${resolveMediaUrl(modelSrc)}"
+              poster="${resolveMediaUrl(imgSrc)}"
               alt="${altText}"
               auto-rotate
               camera-controls

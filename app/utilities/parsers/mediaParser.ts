@@ -1,6 +1,4 @@
-// import apiDocs from "../api-docs";
-import { resolveUploadUrl } from "../resolveUploadUrl";
-
+import { resolveMediaUrl } from "./mediaUrl";
 const parseHTML = (html: string): Document => {
   return new DOMParser().parseFromString(html, "text/html");
 };
@@ -104,11 +102,19 @@ const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
   return doc.body.innerHTML;
 };
 
-// combime both media parsers
-const mediaParser = (html: string, uploadsBaseUrl: string = ""): string => {
+const imageParser = (html: string): string => {
+  const doc = parseHTML(html);
+  doc.querySelectorAll("img[src]").forEach((image) => {
+    image.setAttribute("src", resolveMediaUrl(image.getAttribute("src")!));
+  });
+  return doc.body.innerHTML;
+};
+
+// Combine the media parsers.
+const mediaParser = (html: string): string => {
   let parsedHTML = videoParser(html);
-  parsedHTML = imageParser(parsedHTML, uploadsBaseUrl);
-  parsedHTML = audioParser(parsedHTML, uploadsBaseUrl);
+  parsedHTML = audioParser(parsedHTML);
+  parsedHTML = imageParser(parsedHTML);
   return parsedHTML;
 };
 export { videoParser, audioParser, imageParser, mediaParser };
