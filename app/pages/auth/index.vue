@@ -257,6 +257,12 @@ const signIn = async () => {
       userToken.value = response.user;
       useAuthStore().setToken(accessToken.value);
 
+      // useCookie()'s write to document.cookie happens in a watcher callback,
+      // not synchronously. Flush it before navigating, or the destination
+      // route's auth middleware can read the cookie jar before the write
+      // lands and bounce back here as if the login never happened.
+      await nextTick();
+
       // Navigate to the intended page after login
       const router = useRouter();
       const redirectPath =
