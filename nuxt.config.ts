@@ -70,7 +70,10 @@ export default defineNuxtConfig({
       // base URL so each environment resolves its own uploads correctly,
       // rather than content being frozen to whichever environment it was
       // authored/copied from.
-      uploadsBaseUrl: (process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1").replace(/\/v1\/?$/, ""),
+      // Falls back to "/api" (gateway-relative, not an absolute host) so
+      // environments that leave VITE_API_BASE_URL unset still resolve
+      // uploads against their own gateway instead of a hardcoded host.
+      uploadsBaseUrl: (process.env.VITE_API_BASE_URL || "/api/v1").replace(/\/v1\/?$/, ""),
     },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
