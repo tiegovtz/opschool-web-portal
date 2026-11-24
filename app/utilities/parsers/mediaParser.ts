@@ -1,4 +1,6 @@
 // import apiDocs from "../api-docs";
+import { resolveUploadUrl } from "../resolveUploadUrl";
+
 const parseHTML = (html: string): Document => {
   return new DOMParser().parseFromString(html, "text/html");
 };
@@ -47,7 +49,7 @@ const videoParser = (query: string): string => {
 };
 
 // audio parser
-const audioParser = (html: string): string => {
+const audioParser = (html: string, uploadsBaseUrl: string = ""): string => {
   const doc = parseHTML(html);
 
   const audios = doc.querySelectorAll("audio");
@@ -60,6 +62,7 @@ const audioParser = (html: string): string => {
       src = source?.getAttribute("src") ?? null;
     }
     if (!src) return;
+    src = resolveUploadUrl(src, uploadsBaseUrl);
     const wrapper = doc.createElement("div");
     wrapper.className = "audio-canvas-wrapper inline-block";
     wrapper.innerHTML = `
@@ -88,9 +91,9 @@ const audioParser = (html: string): string => {
 };
 
 // combime both media parsers
-const mediaParser = (html: string): string => {
+const mediaParser = (html: string, uploadsBaseUrl: string = ""): string => {
   let parsedHTML = videoParser(html);
-  parsedHTML = audioParser(parsedHTML);
+  parsedHTML = audioParser(parsedHTML, uploadsBaseUrl);
   return parsedHTML;
 };
 export { videoParser, audioParser, mediaParser };

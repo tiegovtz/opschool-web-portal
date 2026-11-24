@@ -65,6 +65,12 @@ export default defineNuxtConfig({
     public: {
       localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
       imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
+      // Base origin for relative "uploads/..." paths embedded in chapter
+      // content (models, experiments, inline audio). Derived from the API
+      // base URL so each environment resolves its own uploads correctly,
+      // rather than content being frozen to whichever environment it was
+      // authored/copied from.
+      uploadsBaseUrl: (process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1").replace(/\/v1\/?$/, ""),
     },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
