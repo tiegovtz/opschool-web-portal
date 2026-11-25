@@ -8,6 +8,7 @@ import { useAuthStore } from "~/stores/auth";
 import { consumePostLoginHome } from "~/utilities/postLoginHome";
 import { getHubPath } from "~/utilities/educationRoute";
 import { getLoginFailure, readLoginLockout, remainingLoginLockoutSeconds } from "~/utilities/loginLockout";
+import { SESSION_END_KEY } from '~~/shared/auth/session';
 
 // // Use the State
 const navigationStore = useNavigationStore();
@@ -262,6 +263,7 @@ const signIn = async () => {
       // route's auth middleware can read the cookie jar before the write
       // lands and bounce back here as if the login never happened.
       await nextTick();
+      try { localStorage.removeItem(SESSION_END_KEY); } catch { /* Storage may be disabled. */ }
 
       // Navigate to the intended page after login
       const router = useRouter();
@@ -397,6 +399,12 @@ watch(
         {{ isSwahili
           ? 'Ingia ili kuona na kufuatilia maombi yako ya msaada.'
           : 'Sign in to view and follow up on your support requests.' }}
+      </p>
+
+      <p v-if="route.query.reason === 'session-expired'" role="status" class="mx-4 mb-5 rounded-lg bg-blue-50 p-3 text-center text-sm text-[#174f80]">
+        {{ isSwahili
+          ? 'Muda wa kuingia umeisha. Tafadhali ingia tena.'
+          : 'Your session has expired. Please sign in again.' }}
       </p>
 
       <!-- Sign in form -->

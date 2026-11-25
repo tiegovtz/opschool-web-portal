@@ -325,7 +325,7 @@ onUnmounted(() => window.removeEventListener("scroll", updateActiveSection));
 
 // Helper functions 
 const ensureAccessTokenValid = async () => {
-  if (isTokenExpiringSoon(signInAccessToken.value as string, 60)) {
+  if (isTokenExpiringSoon(signInAccessToken.value as string, 0)) {
     await redirectToAuth();
     return false;
   }

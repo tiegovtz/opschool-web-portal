@@ -15,11 +15,7 @@ const pageLanguage = useHubPageLanguage();
 const isSw = computed(() => pageLanguage.value === "kiswahili");
 const navigationStore = useNavigationStore();
 const router = useRouter();
-const redirectToAuth = () =>
-  router.push({
-    path: "/auth",
-    query: { redirect: route.fullPath },
-  });
+const nuxtApp = useNuxtApp();
 
 const smartText = computed(() => ({
   back: isSw.value ? "Rudi" : "Back",
@@ -173,14 +169,9 @@ const openSessionExpiredModal = (message?: string) => {
 };
 
 const clearSessionAndRedirect = async () => {
-  // Clear cookies
-  authAccessTokenCookie.value = null;
-  authUserTokenCookie.value = null;
-
   sessionExpiredModalOpen.value = false;
   if (process.client) document.documentElement.style.overflow = "";
-
-  await redirectToAuth();
+  nuxtApp.$authSession.end('expired');
 };
 
 const streamHeaders = computed(() => ({

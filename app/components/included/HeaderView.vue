@@ -25,8 +25,7 @@ const props = withDefaults(
 );
 
 const userToken = useCookie<any>("signInUserToken");
-const accessToken = useCookie("signInAccessToken");
-const refreshToken = useCookie("signInRefreshToken");
+const nuxtApp = useNuxtApp();
 const route = useRoute();
 const router = useRouter();
 const navigationStore = useNavigationStore();
@@ -62,19 +61,6 @@ const mobileNavItemClass =
 const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
 const desktopInactiveNavItemClass = "hover:bg-white/20";
 const inactiveNavItemClass = "hover:bg-white/20";
-
-const PROTECTED_RETURN_PREFIXES = [
-  "/interactive/",
-  "/video/",
-  "/audio/",
-  "/experiments/",
-  "/tie-ai-teacher",
-];
-
-const shouldRememberCurrentRoute = () =>
-  PROTECTED_RETURN_PREFIXES.some(
-    (prefix) => route.path === prefix || route.path.startsWith(prefix),
-  );
 
 const showLogoutConfirm = ref(false);
 const mobileLogoutRequested = useState<boolean>("mobile-logout-requested", () => false);
@@ -122,16 +108,8 @@ const logoutCancelButtonText = computed(() =>
 );
 
 const logout = () => {
-  if (shouldRememberCurrentRoute()) {
-    navigationStore.setGoBack(route.fullPath);
-  }
-
-  userToken.value = null;
-  accessToken.value = null;
-  refreshToken.value = null;
-
   layoutEffect.value = "grid";
-  window.location.assign("/");
+  nuxtApp.$authSession.end('logout');
   closeAccountMenu();
 
   // Screen reader announcement
