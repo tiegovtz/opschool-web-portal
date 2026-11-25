@@ -43,8 +43,8 @@ const EXPERIMENT_ENTRY_CANDIDATES = ["index.html", "find.html"];
  * entry page by itself (it 404s on the bare folder path) -- the mobile app hit this same
  * 404 and fixed it by naming the entry page explicitly. Since the entry page's name varies
  * by package (see [EXPERIMENT_ENTRY_CANDIDATES]), this probes each candidate and uses
- * whichever one actually exists. Links to an actual page or file (no trailing slash) are
- * left as they are, with no probing needed.
+ * whichever one actually exists. Relative uploads URLs and folders without a trailing
+ * slash need the same resolution. Explicit filenames are left as they are.
  */
 export async function resolveExperimentEntryUrl(
   src: string,
@@ -53,12 +53,17 @@ export async function resolveExperimentEntryUrl(
 ): Promise<string> {
   const url = resolveUploadUrl(src, baseUrl);
   const path = (url.split("?")[0] ?? "").split("#")[0] ?? "";
-  if (!path.endsWith("/") || !/^https?:/i.test(url)) return url;
+  const protocol = url.match(/^([a-z][a-z\d+.-]*):/i)?.[1];
+  if (!path || (protocol && !/^https?$/i.test(protocol))) return url;
+  // Activity2.1 is a folder name, whereas index.html and package.zip are files.
+  const filename = path.slice(path.lastIndexOf("/") + 1);
+  if (/\.[a-z][a-z\d]*$/i.test(filename)) return url;
+  const folder = path.endsWith("/") ? path : `${path}/`;
   const rest = url.slice(path.length);
 
   if (typeof fetch === "function") {
     for (const name of candidates) {
-      const candidateUrl = `${path}${name}${rest}`;
+      const candidateUrl = `${folder}${name}${rest}`;
       try {
         const response = await fetch(candidateUrl, { method: "HEAD" });
         if (response.ok) return candidateUrl;
@@ -69,5 +74,5 @@ export async function resolveExperimentEntryUrl(
   }
   // Nothing probed successfully (SSR, offline, or every candidate is missing): fall back to
   // the most common entry name rather than the bare folder, which is already known to 404.
-  return `${path}${candidates[0]}${rest}`;
+  return `${folder}${candidates[0]}${rest}`;
 }

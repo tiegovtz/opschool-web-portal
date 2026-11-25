@@ -5,6 +5,75 @@ import { loadMediaModule } from './media-test-helpers.mjs';
 const urls = loadMediaModule('../app/utilities/mediaUrls.ts');
 const options = { appBaseURL: '/portal/', uploadsBaseURL: 'https://current.example/api' };
 
+test('experiment entry pages resolve for relative production uploads and folders without trailing slashes', async () => {
+  const requests = [];
+  const { resolveExperimentEntryUrl } = loadMediaModule('../app/utilities/resolveUploadUrl.ts', {
+    fetch: async (url, init) => { requests.push({ url, method: init.method }); return { ok: true }; },
+  });
+  for (const source of [
+    '/api/uploads/steps/id/Activity2.1/',
+    '/api/uploads/steps/id/Activity2.1',
+    '/portal/api/uploads/steps/id/Activity2.1/',
+    '/portal/api/uploads/steps/id/Activity2.1',
+    'https://opschool.tie.go.tz/api/uploads/steps/id/Activity2.1/',
+    'https://opschool.tie.go.tz/api/uploads/steps/id/Activity2.1',
+    '//opschool.tie.go.tz/api/uploads/steps/id/Activity2.1/',
+  ]) {
+    const expected = `${source.replace(/\/$/, '')}/index.html`;
+    assert.equal(await resolveExperimentEntryUrl(source), expected, source);
+    assert.deepEqual(requests.at(-1), { url: expected, method: 'HEAD' });
+  }
+});
+
+test('the experiment page resolves stepsFileUrl after applying the live /api uploads configuration', async () => {
+  const requests = [];
+  const globals = { fetch: async url => { requests.push(url); return { ok: true }; } };
+  const media = loadMediaModule('../app/utilities/mediaUrls.ts', globals);
+  const { resolveExperimentEntryUrl } = loadMediaModule('../app/utilities/resolveUploadUrl.ts', globals);
+  const stepsFileUrl = 'https://opschool.tie.go.tz:5001/uploads/steps/example/Activity1.1/';
+  // The live page calls resolveExperimentEntryUrl(mediaUrls.asset(stepsFileUrl)).
+  const asset = media.resolveContentAssetUrl(stepsFileUrl, { appBaseURL: '/portal/', uploadsBaseURL: '/api' });
+  assert.equal(asset, '/api/uploads/steps/example/Activity1.1/');
+  assert.equal(await resolveExperimentEntryUrl(asset), '/api/uploads/steps/example/Activity1.1/index.html');
+  assert.deepEqual(requests, ['/api/uploads/steps/example/Activity1.1/index.html']);
+});
+
+test('experiment entry probing preserves queries and hashes and supports find.html packages', async () => {
+  const requests = [];
+  const { resolveExperimentEntryUrl } = loadMediaModule('../app/utilities/resolveUploadUrl.ts', {
+    fetch: async url => { requests.push(url); return { ok: url.includes('/find.html') }; },
+  });
+  assert.equal(await resolveExperimentEntryUrl('/api/uploads/steps/id/Activity2.1?lang=sw#start'),
+    '/api/uploads/steps/id/Activity2.1/find.html?lang=sw#start');
+  assert.deepEqual(requests, [
+    '/api/uploads/steps/id/Activity2.1/index.html?lang=sw#start',
+    '/api/uploads/steps/id/Activity2.1/find.html?lang=sw#start',
+  ]);
+});
+
+test('experiment entry resolution still appends index.html when HEAD probes fail', async () => {
+  for (const fetch of [async () => { throw new TypeError('CORS blocked'); }, async () => ({ ok: false })]) {
+    const { resolveExperimentEntryUrl } = loadMediaModule('../app/utilities/resolveUploadUrl.ts', { fetch });
+    assert.equal(await resolveExperimentEntryUrl('uploads/steps/id/Activity2.1/', '/api'),
+      '/api/uploads/steps/id/Activity2.1/index.html');
+  }
+  const { resolveExperimentEntryUrl } = loadMediaModule('../app/utilities/resolveUploadUrl.ts');
+  assert.equal(await resolveExperimentEntryUrl('/portal/api/uploads/steps/id/Activity2.1/'),
+    '/portal/api/uploads/steps/id/Activity2.1/index.html');
+});
+
+test('experiment resolution preserves explicit files and ignores empty or inline sources', async () => {
+  const { resolveExperimentEntryUrl } = loadMediaModule('../app/utilities/resolveUploadUrl.ts', {
+    fetch: () => { assert.fail('An explicit file must not be probed'); },
+  });
+  for (const source of ['', '#start', 'blob:package', 'data:text/html,example',
+    '/api/uploads/experiment/index.html?lang=sw#start',
+    '/api/uploads/experiment/find.html', 'https://cdn.example/experiment/lesson.HTML',
+    '/api/uploads/experiment/package.zip']) {
+    assert.equal(await resolveExperimentEntryUrl(source), source);
+  }
+});
+
 test('upload references share one public root without duplicating /api or /v1', () => {
   for (const source of [
     'uploads/subjects/cover.webp', '/uploads/subjects/cover.webp', '/api/uploads/subjects/cover.webp', '/api/v1/uploads/subjects/cover.webp',
