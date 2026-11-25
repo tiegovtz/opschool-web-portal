@@ -11,11 +11,11 @@ import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import type { ChapterAction } from "~/types/chapterAction";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon } from "~/utilities/jwToken";
-import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
+import { useBackendApi } from "~/composables/useBackendApi";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
 import {
   appendTrackedActivityId,
@@ -32,6 +32,7 @@ const route = useRoute();
 const router = useRouter();
 const appBaseURL = useRuntimeConfig().app.baseURL;
 const mediaUrls = useMediaUrls();
+const { api: apiDocs, fetch: backendFetch } = useBackendApi();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
@@ -701,7 +702,7 @@ const getQNTopicChapter = async (chapterId: string) => {
 try {
   const { data: response, status, error: fetchError } = await fetchAsyncData(
     `chapters-${topicId}`,
-    () => $fetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
+    () => backendFetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`,
       },
@@ -721,6 +722,11 @@ try {
       (fetchError.value as any)?.status ??
       0,
     );
+    console.error('[Topic Page] Topic request failed', {
+      topicId,
+      statusCode,
+      message: (fetchError.value as any)?.statusMessage || 'Topic data is unavailable.',
+    });
     if (statusCode === 401 || statusCode === 403) {
       await redirectToAuth();
     }

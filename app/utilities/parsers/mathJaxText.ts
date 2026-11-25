@@ -14,6 +14,12 @@ export function hasMathJaxText(source: string): boolean {
 }
 
 export function formatMathJaxText(source: string): string {
+  // Normalizing a whole question can put \\text{...} outside its $...$
+  // expressions, where MathJax leaves the command visible as ordinary text.
+  return splitMathJaxText(source).map(segment => segment.value).join("");
+}
+
+function formatMathSegment(source: string): string {
   if (!hasMathJaxText(source)) return source;
   const normalized = normalizeQuizMath(source).trim();
   if (DELIMITED_MATH.test(source)) return normalized;
@@ -43,7 +49,7 @@ export function splitMathJaxText(source: string): MathJaxSegment[] {
     for (const match of expressions) {
       const index = match.index!;
       if (index > offset) appendOutside(source.slice(offset, index));
-      parts.push({ kind: "math", value: formatMathJaxText(match[0]) });
+      parts.push({ kind: "math", value: formatMathSegment(match[0]) });
       offset = index + match[0].length;
     }
     if (offset < source.length) appendOutside(source.slice(offset));
@@ -62,13 +68,13 @@ export function splitMathJaxText(source: string): MathJaxSegment[] {
           const preceding = source.slice(offset, index);
           parts.push({ kind: "text", value: /[A-Za-z0-9]$/.test(preceding) ? `${preceding} ` : preceding });
         }
-        parts.push({ kind: "math", value: formatMathJaxText(match[0]) });
+        parts.push({ kind: "math", value: formatMathSegment(match[0]) });
         offset = index + match[0].length;
       }
       if (offset < source.length) parts.push({ kind: "text", value: source.slice(offset) });
       return parts;
     }
-    return [{ kind: hasMathJaxText(source) ? "math" : "text", value: formatMathJaxText(source) }];
+    return [{ kind: hasMathJaxText(source) ? "math" : "text", value: formatMathSegment(source) }];
   }
 
   const endTag = "\\end{array}";
@@ -80,7 +86,7 @@ export function splitMathJaxText(source: string): MathJaxSegment[] {
   const parts: MathJaxSegment[] = [];
   const prefix = source.slice(0, start).trim();
   if (prefix) parts.push(...splitMathJaxText(prefix));
-  parts.push({ kind: "math", value: formatMathJaxText(source.slice(start, end + endTag.length)) });
+  parts.push({ kind: "math", value: formatMathSegment(source.slice(start, end + endTag.length)) });
   const suffix = source.slice(end + endTag.length).trim();
   if (suffix) parts.push(...splitMathJaxText(suffix));
   return parts;

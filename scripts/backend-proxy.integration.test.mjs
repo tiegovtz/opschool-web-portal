@@ -23,6 +23,14 @@ test('production backend proxy contract', async t => {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     requests.push({ url: req.url, method: req.method, headers: req.headers, body: Buffer.concat(chunks) });
+    if (req.url === '/api/v1/topics/reload-topic') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({
+        _id: 'reload-topic',
+        chapters: [{ _id: 'reload-chapter', name: 'Reload competence', chapterNo: 1 }],
+        languageData: [{ name: 'English', _id: 'english' }],
+      }));
+    }
     if (/^\/api\/v1\/conversations\/(engage|constant)\/test-chapter$/.test(req.url)) {
       const type = req.url.includes('/constant/') ? 'constant' : 'engage';
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -119,6 +127,53 @@ test('production backend proxy contract', async t => {
     try { await fetch(`${base}/api/backend/v1/ready`); ready = true; break; } catch { await delay(100); }
   }
   assert.ok(ready, `Production server did not start: ${output.slice(-2000)}`);
+
+  const checkChapterReload = async (pageBase) => {
+    const token = `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.signature`;
+    const count = requests.length;
+    const response = await fetch(`${pageBase}/interactive/Form%20One/Physics/Reload%20topic/reload-topic`, {
+      headers: { Cookie: `signInAccessToken=${token}` },
+    });
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    const topicRequest = requests.slice(count).find(request => request.url === '/api/v1/topics/reload-topic');
+    assert.ok(topicRequest, `SSR did not use the runtime backend: ${output.slice(-2000)}`);
+    assert.equal(topicRequest.headers.authorization, `Bearer ${token}`);
+    assert.equal(topicRequest.headers.cookie, undefined);
+    assert.ok(html.includes('reload-chapter'), 'SSR must serialize the loaded topic for hydration');
+    assert.ok(!html.includes('Error while loading chapter'));
+  };
+
+  await t.test('a chapter page reload fetches its topic through the runtime backend with user authentication', () => checkChapterReload(base));
+
+  await t.test('a chapter page reload also works when deployed under /portal/', async t => {
+    const reservation = createServer();
+    reservation.listen(0, '127.0.0.1');
+    await once(reservation, 'listening');
+    const port = reservation.address().port;
+    await new Promise(resolve => reservation.close(resolve));
+    const portalBase = `http://127.0.0.1:${port}/portal`;
+    const portal = spawn(process.execPath, ['.output/server/index.mjs'], {
+      cwd: new URL('..', import.meta.url),
+      env: { ...process.env, NODE_ENV: 'production', NITRO_HOST: '127.0.0.1', NITRO_PORT: String(port),
+        NUXT_APP_BASE_URL: '/portal/', NUXT_CSRF_ENABLED: 'false',
+        NUXT_BACKEND_API_BASE_URL: `http://127.0.0.1:${upstream.address().port}/api/v1/` },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    t.after(() => portal.kill('SIGTERM'));
+    let logs = '';
+    portal.stdout.on('data', chunk => { logs += chunk; });
+    portal.stderr.on('data', chunk => { logs += chunk; });
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        if ((await fetch(`${portalBase}/api/backend/v1/ready`)).ok) { ready = true; break; }
+      } catch { /* Wait for the test server to start. */ }
+      await delay(100);
+    }
+    assert.ok(ready, `Production /portal/ server did not start: ${logs.slice(-2000)}`);
+    await checkChapterReload(portalBase);
+  });
 
   await t.test('preserves query strings and removes browser origin headers', async () => {
     const query = '?educationLevel=lower+secondary&level=1&level=2';

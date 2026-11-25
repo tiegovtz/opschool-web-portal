@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import { transpileModule } from 'typescript';
 import * as educationRoutes from '../app/utilities/educationRoute.ts';
+import { loadMediaModule } from './media-test-helpers.mjs';
 import {
   createSessionLifecycle,
   createSessionFetch,
@@ -13,15 +14,16 @@ import {
 } from '../shared/auth/session.ts';
 
 const require = createRequire(import.meta.url);
+const mediaUrls = loadMediaModule('../app/utilities/mediaUrls.ts');
 const { createRouter, createMemoryHistory } = createRequire(require.resolve('nuxt/package.json'))('vue-router');
 const pluginSource = await readFile(new URL('../app/plugins/auth-session.client.ts', import.meta.url), 'utf8');
 const { outputText: sessionPlugin } = transpileModule(pluginSource.replaceAll('import.meta.hot', 'false'), {
   compilerOptions: { module: 1, target: 9 },
 });
 
-async function sessionRedirect(base, currentPath, reason) {
+async function sessionRedirect(base, currentPath, reason, routerBase = base) {
   const router = createRouter({
-    history: createMemoryHistory(base),
+    history: createMemoryHistory(routerBase),
     routes: [{ path: '/:pathMatch(.*)*', component: {} }],
   });
   await router.push(currentPath);
@@ -34,6 +36,7 @@ async function sessionRedirect(base, currentPath, reason) {
       if (name === '~/stores/auth') return { useAuthStore: () => ({}) };
       if (name === '~/stores/navigationStore') return { useNavigationStore: () => ({}) };
       if (name === '~/utilities/educationRoute') return educationRoutes;
+      if (name === '~/utilities/mediaUrls') return mediaUrls;
       if (name === '~~/shared/auth/session') return {
         createSessionLifecycle(options) { lifecycle = options; return { check() {} }; },
         createSessionFetch: () => () => {},
@@ -42,6 +45,7 @@ async function sessionRedirect(base, currentPath, reason) {
     },
     defineNuxtPlugin: plugin => plugin,
     useRouter: () => router,
+    useRuntimeConfig: () => ({ app: { baseURL: base } }),
     useHubEducationLevel: () => ({ value: 'secondary' }),
     useCookie: () => ({ value: null }),
     nextTick: () => Promise.resolve(),
@@ -75,6 +79,19 @@ test('expiry on an auth page stays under the app base without a return loop', as
     assert.equal(destination.searchParams.get('reason'), 'session-expired');
     assert.equal(destination.searchParams.has('redirect'), false);
   }
+});
+
+test('expiry uses the runtime /portal/ base even when router hrefs use the origin root', async () => {
+  const route = '/interactive/Form%203/Mathematics/Sequences%20and%20series/6affe3fa12374d8a9da5bb76?educationLevel=secondary&edl=secondary&lang=en';
+  const destination = await sessionRedirect('/portal/', route, 'expired', '/');
+  assert.equal(destination.pathname, '/portal/auth');
+  assert.equal(destination.searchParams.get('reason'), 'session-expired');
+  assert.equal(destination.searchParams.get('redirect'), route);
+});
+
+test('logout also uses the runtime app base when router hrefs use the origin root', async () => {
+  const destination = await sessionRedirect('/portal/', '/secondary/topic', 'logout', '/');
+  assert.equal(destination.pathname, '/portal/secondary');
 });
 
 test('logout retains the app base when returning to either education hub', async () => {
@@ -242,12 +259,13 @@ test('reads current Nuxt cookies in both plain and JSON-encoded formats', () => 
   });
 });
 
-test('an authenticated API 401 ends the session for fetch and Request inputs', async () => {
-  for (const input of ['/api/backend/v1/auth/profile', new Request('https://portal.test/api/ai/chat')]) {
+test('an authenticated API 401 ends the session at root and /portal/ for fetch and Request inputs', async () => {
+  for (const input of ['/api/backend/v1/auth/profile', '/portal/api/backend/v1/auth/profile',
+    new Request('https://portal.test/api/ai/chat'), new Request('https://portal.test/portal/api/ai/chat')]) {
     let logouts = 0;
     const response = new Response('unauthorized', { status: 401 });
     const fetcher = createSessionFetch(async () => response, {
-      origin: 'https://portal.test', readToken: () => 'token', onUnauthorized: () => logouts++,
+      origin: 'https://portal.test', apiBasePath: '/portal/api/', readToken: () => 'token', onUnauthorized: () => logouts++,
     });
     assert.equal(await fetcher(input), response);
     assert.equal(logouts, 1);
@@ -258,6 +276,9 @@ test('an authenticated API 401 ends the session for fetch and Request inputs', a
 test('sign-in errors, third-party APIs, permission errors and unrelated bearer tokens do not log out the user', async () => {
   for (const [url, status, token, headers] of [
     ['/api/backend/v1/auth/login', 401, 'token'],
+    ['/portal/api/backend/v1/auth/login', 401, 'token'],
+    ['/portal/other-page', 401, 'token'],
+    ['/portal/api-other/private', 401, 'token'],
     ['/api/backend/v1/auth/sign-up', 401, 'token'],
     ['/api/backend/v1/auth/refresh-token', 401, 'token'],
     ['/api/backend/v1/auth/verify-code', 401, 'token'],
@@ -269,7 +290,7 @@ test('sign-in errors, third-party APIs, permission errors and unrelated bearer t
   ]) {
     let logouts = 0;
     const fetcher = createSessionFetch(async () => new Response(null, { status }), {
-      origin: 'https://portal.test', readToken: () => token, onUnauthorized: () => logouts++,
+      origin: 'https://portal.test', apiBasePath: '/portal/api/', readToken: () => token, onUnauthorized: () => logouts++,
     });
     await fetcher(url, { headers });
     assert.equal(logouts, 0, url);

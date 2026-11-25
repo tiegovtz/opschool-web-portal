@@ -124,7 +124,7 @@ const PUBLIC_AUTH_PATH = /\/auth\/(?:login|sign-up|choose-identity|refresh-token
 /** Observe only this portal's authenticated APIs, never third-party or sign-in failures. */
 export function createSessionFetch(
   fetcher: typeof fetch,
-  options: { origin: string; readToken: () => string | null; onUnauthorized: () => void },
+  options: { origin: string; apiBasePath?: string; readToken: () => string | null; onUnauthorized: () => void },
 ): typeof fetch {
   return async (input, init) => {
     const token = options.readToken();
@@ -133,7 +133,9 @@ export function createSessionFetch(
     const authorization = headers.get('authorization');
     const credentials = init?.credentials ?? (input instanceof Request ? input.credentials : undefined);
     const usesSession = !!token && (authorization === `Bearer ${token}` || (!authorization && credentials !== 'omit'));
-    const observe = usesSession && url.origin === options.origin && url.pathname.startsWith('/api/') && !PUBLIC_AUTH_PATH.test(url.pathname);
+    const isPortalApi = url.pathname.startsWith('/api/') ||
+      (options.apiBasePath && url.pathname.startsWith(options.apiBasePath));
+    const observe = usesSession && url.origin === options.origin && isPortalApi && !PUBLIC_AUTH_PATH.test(url.pathname);
     const response = await fetcher(input, init);
     // Ignore a late response from an older session or a token replaced during the request.
     if (observe && response.status === 401 && options.readToken() === token) options.onUnauthorized();

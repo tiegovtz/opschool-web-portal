@@ -1,6 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { splitMathJaxText } from '../app/utilities/parsers/mathJaxText.ts';
+import { formatMathJaxText, splitMathJaxText } from '../app/utilities/parsers/mathJaxText.ts';
+
+test('formatting the sequence questions and choices never adds TeX commands to ordinary prose', () => {
+  const inputs = [
+    'Find the next two terms of the sequence 2, 5, 8, 11, ...',
+    'Find the nth term of the sequence 4, 7, 10, 13, ...',
+    String.raw`What is the $12^{\text {th }}$ term of the sequence 1, -1, 1, -1, 1, ...? `,
+    String.raw`Find the next two terms of the sequence $\frac{1}{2}, \frac{2}{3}, \frac{3}{4}, \frac{4}{5}, \ldots$ `,
+    String.raw`A sequence has nth term $a$ ? $=\frac{1}{\left[2+(-1)^{n}\right]}$. Which statement correctly describes its first four terms and its behaviour?`,
+    String.raw`$\frac{1}{3}, 1, \frac{1}{3}, 1$; it is increasing.`,
+    String.raw`$1, \frac{1}{3}, \frac{1}{3}, 1$; it is decreasing.`,
+    String.raw`$1, \frac{1}{3}, 1, \frac{1}{3}$; it is increasing.`,
+    String.raw`$1, \frac{1}{3}, 1, \frac{1}{3}$; it is neither increasing nor decreasing.`,
+  ];
+  for (const input of inputs) {
+    assert.equal(formatMathJaxText(input), input);
+    const segments = splitMathJaxText(input);
+    assert.equal(segments.map(segment => segment.value).join(''), input);
+    assert.ok(segments.filter(segment => segment.kind === 'text').every(segment => !segment.value.includes('\\text')));
+  }
+});
 
 test('preserves the API ordered-pair answer as prose followed by inline math', () => {
   const source = 'Two elements written in a specific order, usually in the form $(a, b)$';

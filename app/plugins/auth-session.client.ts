@@ -1,6 +1,7 @@
 import { useAuthStore } from '~/stores/auth';
 import { useNavigationStore } from '~/stores/navigationStore';
 import { getHubPath, normalizeEducationLevel, resolveEducationLevelFromRoute } from '~/utilities/educationRoute';
+import { portalPath } from '~/utilities/mediaUrls';
 import {
   AUTH_COOKIE_NAMES,
   SESSION_END_KEY,
@@ -15,6 +16,7 @@ export default defineNuxtPlugin({
   dependsOn: ['pinia'],
   setup(nuxtApp) {
     const router = useRouter();
+    const appBaseURL = useRuntimeConfig().app.baseURL;
     const authStore = useAuthStore();
     const navigationStore = useNavigationStore();
     const hubEducationLevel = useHubEducationLevel();
@@ -55,7 +57,7 @@ export default defineNuxtPlugin({
       redirect(reason) {
         const current = router.currentRoute.value;
         const hub = getHubPath(resolveEducationLevelFromRoute(current, normalizeEducationLevel(hubEducationLevel.value)));
-        let destination = router.resolve(hub).href;
+        let destination = portalPath(hub, appBaseURL);
         if (reason === 'expired') {
           const query = new URLSearchParams({ reason: 'session-expired' });
           // Never preserve a token supplied in a URL after the session has ended.
@@ -64,7 +66,7 @@ export default defineNuxtPlugin({
           if (current.path !== '/auth' && !current.path.startsWith('/auth/')) {
             query.set('redirect', `${path.pathname}${path.search}${path.hash}`);
           }
-          destination = router.resolve(`/auth?${query}`).href;
+          destination = portalPath(`/auth?${query}`, appBaseURL);
         }
         // Reload to discard user data, captured bearer tokens, media and pending work.
         void nextTick().then(() => window.location.replace(destination));
@@ -99,6 +101,7 @@ export default defineNuxtPlugin({
     const originalFetch = window.fetch;
     const sessionFetch = createSessionFetch(originalFetch.bind(window), {
       origin: window.location.origin,
+      apiBasePath: portalPath('/api/', appBaseURL),
       readToken: () => readCookies().accessToken,
       onUnauthorized: () => session.end('expired'),
     });
