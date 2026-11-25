@@ -64,7 +64,7 @@ export default defineNuxtPlugin({
           if (current.path !== '/auth' && !current.path.startsWith('/auth/')) {
             query.set('redirect', `${path.pathname}${path.search}${path.hash}`);
           }
-          destination = `/auth?${query}`;
+          destination = router.resolve(`/auth?${query}`).href;
         }
         // Reload to discard user data, captured bearer tokens, media and pending work.
         void nextTick().then(() => window.location.replace(destination));

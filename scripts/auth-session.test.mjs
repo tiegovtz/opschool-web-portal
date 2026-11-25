@@ -1,11 +1,91 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import vm from 'node:vm';
+import { transpileModule } from 'typescript';
+import * as educationRoutes from '../app/utilities/educationRoute.ts';
 import {
   createSessionLifecycle,
   createSessionFetch,
   readSessionCookies,
   tokenExpiresAt,
 } from '../shared/auth/session.ts';
+
+const require = createRequire(import.meta.url);
+const { createRouter, createMemoryHistory } = createRequire(require.resolve('nuxt/package.json'))('vue-router');
+const pluginSource = await readFile(new URL('../app/plugins/auth-session.client.ts', import.meta.url), 'utf8');
+const { outputText: sessionPlugin } = transpileModule(pluginSource.replaceAll('import.meta.hot', 'false'), {
+  compilerOptions: { module: 1, target: 9 },
+});
+
+async function sessionRedirect(base, currentPath, reason) {
+  const router = createRouter({
+    history: createMemoryHistory(base),
+    routes: [{ path: '/:pathMatch(.*)*', component: {} }],
+  });
+  await router.push(currentPath);
+  let lifecycle;
+  let destination;
+  const exports = {};
+  vm.runInNewContext(sessionPlugin, {
+    exports, URL, URLSearchParams,
+    require(name) {
+      if (name === '~/stores/auth') return { useAuthStore: () => ({}) };
+      if (name === '~/stores/navigationStore') return { useNavigationStore: () => ({}) };
+      if (name === '~/utilities/educationRoute') return educationRoutes;
+      if (name === '~~/shared/auth/session') return {
+        createSessionLifecycle(options) { lifecycle = options; return { check() {} }; },
+        createSessionFetch: () => () => {},
+      };
+      throw new Error(`Unexpected import: ${name}`);
+    },
+    defineNuxtPlugin: plugin => plugin,
+    useRouter: () => router,
+    useHubEducationLevel: () => ({ value: 'secondary' }),
+    useCookie: () => ({ value: null }),
+    nextTick: () => Promise.resolve(),
+    setInterval: () => 1,
+    window: {
+      location: { origin: 'https://opschool.tie.go.tz', replace: value => { destination = value; } },
+      addEventListener() {}, fetch() {},
+    },
+    document: { addEventListener() {} },
+  });
+  exports.default.setup({ hook() {} });
+  lifecycle.redirect(reason);
+  await Promise.resolve();
+  return new URL(destination, 'https://opschool.tie.go.tz');
+}
+
+test('expiry redirects through the app base and keeps a safe return route', async () => {
+  for (const base of ['/', '/portal/']) {
+    const destination = await sessionRedirect(base, '/secondary/topic?lang=en&auth-token=secret#question-2', 'expired');
+    assert.equal(destination.pathname, `${base}auth`);
+    assert.equal(destination.searchParams.get('reason'), 'session-expired');
+    assert.equal(destination.searchParams.get('redirect'), '/secondary/topic?lang=en#question-2');
+    assert.ok(!destination.href.includes('secret'));
+  }
+});
+
+test('expiry on an auth page stays under the app base without a return loop', async () => {
+  for (const base of ['/', '/portal/']) {
+    const destination = await sessionRedirect(base, '/auth/SignUp', 'expired');
+    assert.equal(destination.pathname, `${base}auth`);
+    assert.equal(destination.searchParams.get('reason'), 'session-expired');
+    assert.equal(destination.searchParams.has('redirect'), false);
+  }
+});
+
+test('logout retains the app base when returning to either education hub', async () => {
+  for (const base of ['/', '/portal/']) {
+    for (const hub of ['primary', 'secondary']) {
+      const destination = await sessionRedirect(base, `/${hub}/topic`, 'logout');
+      assert.equal(destination.pathname, `${base}${hub}`);
+      assert.equal(destination.search, '');
+    }
+  }
+});
 
 const jwt = (exp, extra = {}) => `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify({ exp, ...extra })).toString('base64url')}.signature`;
 

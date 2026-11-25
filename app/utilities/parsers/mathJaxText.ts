@@ -1,6 +1,7 @@
 import { normalizeQuizMath } from "./normalizeQuizMath.ts";
 
 const DELIMITED_MATH = /\\\(|\\\[|\$\$|(?<!\$)\$[^$\n]+\$|\\begin\{(?:math|displaymath|equation)\}/;
+const MATH_EXPRESSION = /\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|(?<![\\$])\$(?!\$)(?:\\.|[^$\\\n])+\$(?!\$)|\\begin\{(math|displaymath|equation)\}[\s\S]*?\\end\{\1\}/g;
 const TEX_COMMAND = /\\(?:[A-Za-z]+|[;,! {}])|\^\s*\{/;
 const MATH_SPACING = /~.*[=+\-−*/^]|[=+\-−*/^].*~/;
 const TEX_START = /^\s*\{?\s*\\(?:begin|mathrm|mathsf|mathbb|mathbf|mathit|text|frac|dfrac|tfrac|sqrt|left|sum|int|vec|overline|underline)\b/;
@@ -22,8 +23,31 @@ export function formatMathJaxText(source: string): string {
 export type MathJaxSegment = { kind: "text" | "math"; value: string };
 
 export function splitMathJaxText(source: string): MathJaxSegment[] {
-  if (/\\\(|\\\[|\$\$/.test(source)) {
-    return [{ kind: "math", value: formatMathJaxText(source) }];
+  // Raw TeX can appear alongside delimited formulas in the same answer.
+  // Format each outside portion separately so commands such as \\text{...}
+  // receive delimiters too, while ordinary prose remains wrappable text.
+  const expressions = [...source.matchAll(MATH_EXPRESSION)];
+  if (expressions.length) {
+    const parts: MathJaxSegment[] = [];
+    const appendOutside = (value: string) => {
+      const segments = splitMathJaxText(value);
+      // Formatting raw TeX trims its edges. Keep visible spaces between
+      // separately rendered formulas and text commands.
+      const leading = value.match(/^\s+/)?.[0];
+      const trailing = value.match(/\s+$/)?.[0];
+      if (leading && segments[0]?.kind === "math") parts.push({ kind: "text", value: leading });
+      parts.push(...segments);
+      if (trailing && segments[segments.length - 1]?.kind === "math") parts.push({ kind: "text", value: trailing });
+    };
+    let offset = 0;
+    for (const match of expressions) {
+      const index = match.index!;
+      if (index > offset) appendOutside(source.slice(offset, index));
+      parts.push({ kind: "math", value: formatMathJaxText(match[0]) });
+      offset = index + match[0].length;
+    }
+    if (offset < source.length) appendOutside(source.slice(offset));
+    return parts;
   }
   const start = source.indexOf("\\begin{array}");
   if (start === -1) {
