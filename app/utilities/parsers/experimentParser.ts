@@ -1,6 +1,7 @@
 import { activityPopupId, experimrntUrl } from "../controlls";
 import { resolveMediaUrl } from "./mediaUrl";
 import { escapeHtmlAttribute, type MediaUrlOptions } from '../mediaUrls';
+import { resolveExperimentEntryUrl } from "../resolveUploadUrl";
 
 const experimentParser = (query: string, options: MediaUrlOptions = {}): string => {
     // Regular expression to match expPackage and associated <img>
@@ -33,7 +34,11 @@ if (typeof window !== "undefined") {
     window.openActivity = (expSrc: string) => {
         // You can add custom logic here (e.g., open modal, navigate, etc.)
         activityPopupId.value = "";
-        experimrntUrl.value = expSrc;
+        // expSrc is the package's folder; resolve which entry page it actually has
+        // (index.html or find.html -- see resolveExperimentEntryUrl) before opening it.
+        resolveExperimentEntryUrl(expSrc).then((resolved) => {
+            experimrntUrl.value = resolved;
+        });
     };
 }
 export default experimentParser;
