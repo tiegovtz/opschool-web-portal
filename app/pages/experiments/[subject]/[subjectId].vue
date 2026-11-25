@@ -5,7 +5,7 @@ import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import { screenWidth } from "@/utilities/controlls";
 import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
@@ -19,6 +19,7 @@ import {
 } from "~/utilities/educationRoute";
 
 // Defin Route
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const router = useRouter();
 const redirectToAuth = () =>
@@ -125,6 +126,7 @@ useHead({
 });
 
 const userToken = useCookie("signInUserToken");
+const accessToken = useCookie("signInAccessToken");
 
 // Define Ref State
 const status = ref("pending"); // Initial Status State
@@ -162,7 +164,7 @@ const fetchTopics = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => backendFetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -170,7 +172,7 @@ const fetchTopics = async (params) => {
         ...params,
       },
       headers: {
-        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+        Authorization: `Bearer ${accessToken.value}`,
       },
     }));
 
@@ -185,9 +187,6 @@ const fetchTopics = async (params) => {
     redirectToAuth();
   }
 };
-
-// Call Fetch Topics function
-fetchTopics({ level: typeof route.query.level === "string" ? route.query.level : undefined });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -236,6 +235,8 @@ const { progress, isLoading } = useLoadingIndicator();
 const contentLayoutLanguage = useContentLayoutLanguage();
 const applyClassFilter = (value) => fetchTopics({ level: value || undefined });
 
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchTopics({ level: typeof route.query.level === "string" ? route.query.level : undefined });
 </script>
 
 <template>

@@ -48,3 +48,26 @@ test('topic request failures retain their HTTP status for the page error and aut
     await assert.rejects(fetch(api.topics.getTopicId.replaceAll(':id', 'topic-id')), result => result === error);
   }
 });
+
+test('resource collections preserve subject filters through the portal proxy', async () => {
+  const rows = [{ _id: 'video-1', subject: { name: 'Physics' } }];
+  const requests = [];
+  const { api, fetchList } = backendApi('/portal/', async (url, options) => {
+    requests.push({ url, options });
+    return rows;
+  });
+  assert.equal(await fetchList(api.videos.getPublicVideoBySubjectId.replace('{subjectId}', 'physics'), {
+    params: { level: 'form-one', videoType: 'Conceptual' },
+  }), rows);
+  assert.equal(requests[0].url, '/portal/api/backend/v1/public-videos/by-subject/physics');
+  assert.deepEqual(requests[0].options.params, { level: 'form-one', videoType: 'Conceptual' });
+});
+
+test('an invalid resource response fails instead of becoming an empty content list', async () => {
+  for (const result of ['<html>Portal page</html>', { error: 'Wrong API endpoint' }, null]) {
+    const { fetchList } = backendApi('/portal/', async () => result);
+    await assert.rejects(fetchList('/portal/api/backend/v1/public-videos'), /invalid resource list/);
+  }
+  const { fetchList } = backendApi('/portal/', async () => []);
+  assert.deepEqual(await fetchList('/portal/api/backend/v1/public-videos'), []);
+});

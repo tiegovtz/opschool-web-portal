@@ -8,5 +8,12 @@ export function useBackendApi() {
   // On SSR this forwards the current request's authentication to the local
   // proxy. The proxy selects the upstream and filters outgoing headers.
   const fetch = useRequestFetch();
-  return { api, fetch };
+  const fetchList = async <T = unknown>(url: string, options?: Parameters<typeof fetch>[1]): Promise<T[]> => {
+    const result = await fetch<T[]>(url, options);
+    if (!Array.isArray(result)) {
+      throw new Error('Backend returned an invalid resource list.');
+    }
+    return result as T[];
+  };
+  return { api, fetch, fetchList };
 }

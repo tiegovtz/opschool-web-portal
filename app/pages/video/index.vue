@@ -4,7 +4,7 @@ import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, watch } from 'vue';
 import { screenWidth } from '@/utilities/controlls';
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
@@ -51,6 +51,7 @@ const error = ref(null);        // Initial Error State
 const status = ref('pending'); // Initial Status State
 const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
@@ -130,7 +131,7 @@ const fetchVideos = async (param?: any) => {
   try {
     status.value = 'pending';
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${videoType.value}`, () => $fetch(apiDocs.videos.getPublicVideo, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${videoType.value}`, () => backendFetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
         ...param
@@ -154,9 +155,6 @@ const fetchVideos = async (param?: any) => {
     error.value = erro as any;
   }
 }
-
-// Call FetchVideos Function
-fetchVideos({});
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -252,6 +250,8 @@ watch(filters, (filters) => {
 
 const contentLayoutLanguage = useContentLayoutLanguage();
 
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchVideos({});
 </script>
 
 <template>

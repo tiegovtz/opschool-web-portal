@@ -4,7 +4,7 @@ import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import { screenWidth } from "@/utilities/controlls";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import AudioCard from "~/components/audio/audioCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
@@ -20,6 +20,7 @@ import {
 
 
 // Defin Route
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const router = useRouter();
 const decodeParam = (value) => {
@@ -159,7 +160,7 @@ const fetchAudios = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`,()=>backendFetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
@@ -178,9 +179,6 @@ const fetchAudios = async (params) => {
     slicedData.value = [];
   }
 };
-
-// Call Fetch Topics function
-fetchAudios({ level: typeof route.query.level === "string" ? route.query.level : undefined });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -243,6 +241,8 @@ watch(filters, (filters) => {
 
 const contentLayoutLanguage = useContentLayoutLanguage();
 const applyClassFilter = (value) => fetchAudios({ level: value || undefined });
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchAudios({ level: typeof route.query.level === "string" ? route.query.level : undefined });
 </script>
 
 <template>

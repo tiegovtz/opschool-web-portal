@@ -31,6 +31,32 @@ test('production backend proxy contract', async t => {
         languageData: [{ name: 'English', _id: 'english' }],
       }));
     }
+    const resourceUrl = new URL(req.url, 'http://backend.test');
+    if (resourceUrl.pathname === '/api/v1/education-levels' || resourceUrl.pathname === '/api/v1/levels') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify([]));
+    }
+    if (resourceUrl.pathname === '/api/v1/public-subjects' && resourceUrl.searchParams.getAll('level').length < 2) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify([]));
+    }
+    const collection = /^\/api\/v1\/(public-topics|public-videos|public-audios|public-experiments)(?:\/by-subject\/([^/]+))?$/.exec(resourceUrl.pathname);
+    if (collection) {
+      if (collection[2] === 'invalid-resource') {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        return res.end('<html>Wrong API endpoint</html>');
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify([{
+        _id: `reload-${collection[1]}`, name: 'Reload resource',
+        subject: { _id: 'reload-subject', name: 'Physics' },
+        level: { _id: 'form-one', name: 'Form One' },
+        language: { _id: 'english', name: 'English' },
+        thumbnail: '/images/default.webp', description: 'Reload resource description',
+        isDeleted: false, videoType: resourceUrl.searchParams.get('videoType') || 'Conceptual',
+        audioType: 'LESSON', videoFileUrl: '/uploads/test.mp4', audioFileUrl: '/uploads/test.mp3',
+      }]));
+    }
     if (/^\/api\/v1\/conversations\/(engage|constant)\/test-chapter$/.test(req.url)) {
       const type = req.url.includes('/constant/') ? 'constant' : 'engage';
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -146,6 +172,47 @@ test('production backend proxy contract', async t => {
 
   await t.test('a chapter page reload fetches its topic through the runtime backend with user authentication', () => checkChapterReload(base));
 
+  const checkResourceReloads = async (pageBase) => {
+    const user = encodeURIComponent(JSON.stringify({ _id: 'learner', name: 'Learner' }));
+    const routes = [
+      ['/video/physics/reload-subject?type=conc&level=form-one', 'public-videos'],
+      ['/video/physics/reload-subject?type=oth&level=form-one', 'public-videos'],
+      ['/interactive/physics/reload-subject', 'public-topics'],
+      ['/experiments/physics/reload-subject?level=form-one', 'public-experiments'],
+      ['/audio/physics/reload-subject?level=form-one', 'public-audios'],
+      ['/video?type=conc', 'public-videos'],
+      ['/interactive', 'public-topics'],
+      ['/experiments', 'public-experiments'],
+      ['/audio', 'public-audios'],
+      ['/secondary?section=interactive-content', 'public-topics'],
+    ];
+    for (const [path, collection] of routes) {
+      const count = requests.length;
+      const response = await fetch(`${pageBase}${path}`, {
+        headers: { Cookie: `signInUserToken=${user}; signInAccessToken=resource-token` },
+        signal: AbortSignal.timeout(15_000),
+      });
+      assert.equal(response.status, 200, path);
+      const html = await response.text();
+      assert.ok(requests.slice(count).some(request => request.url.startsWith(`/api/v1/${collection}`)),
+        `${path} must fetch from the runtime backend`);
+      assert.ok(html.includes(`reload-${collection}`), `${path} must serialize its resource list for hydration`);
+      assert.ok(!html.includes('This content will be updated soon'), `${path} must not show an empty list`);
+      if (path.includes('level=form-one')) {
+        const resourceRequest = requests.slice(count).find(request => request.url.startsWith(`/api/v1/${collection}`));
+        const params = new URL(resourceRequest.url, 'http://backend.test').searchParams;
+        assert.equal(params.get('level'), 'form-one', path);
+        if (path.includes('type=')) assert.equal(params.get('videoType'), path.includes('type=oth') ? 'Others' : 'Conceptual');
+      }
+    }
+    const response = await fetch(`${pageBase}/video/physics/invalid-resource?type=conc`, { signal: AbortSignal.timeout(15_000) });
+    const html = await response.text();
+    assert.ok(html.includes('Oops! Something went wrong.'), 'Malformed API data must show an error');
+    assert.ok(!html.includes('This content will be updated soon'), 'Malformed API data must not appear empty');
+  };
+
+  await t.test('subject resources and resource tabs survive a production reload', () => checkResourceReloads(base));
+
   await t.test('a chapter page reload also works when deployed under /portal/', async t => {
     const reservation = createServer();
     reservation.listen(0, '127.0.0.1');
@@ -173,6 +240,7 @@ test('production backend proxy contract', async t => {
     }
     assert.ok(ready, `Production /portal/ server did not start: ${logs.slice(-2000)}`);
     await checkChapterReload(portalBase);
+    await checkResourceReloads(portalBase);
   });
 
   await t.test('preserves query strings and removes browser origin headers', async () => {

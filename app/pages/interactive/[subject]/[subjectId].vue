@@ -4,7 +4,7 @@ import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, watch } from "vue";
 import type { tabs } from "~/types/types.data";
 import { screenWidth } from "@/utilities/controlls";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
@@ -18,6 +18,7 @@ import {
 } from "~/utilities/educationRoute";
 
 // Defin Route
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const router = useRouter();
 const redirectToAuth = () =>
@@ -228,7 +229,7 @@ const fetchTopics = async (params: any) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`, () => $fetch(apiDocs.topics.getSubjectId.replace(
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`, () => backendFetch(apiDocs.topics.getSubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -236,7 +237,7 @@ const fetchTopics = async (params: any) => {
         ...params,
       },
       headers: {
-        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+        Authorization: `Bearer ${accessToken.value}`,
       },
     }))
 
@@ -251,9 +252,6 @@ const fetchTopics = async (params: any) => {
     redirectToAuth();
   }
 };
-
-// Call Fetch Topics function
-fetchTopics({});
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -319,6 +317,8 @@ watch(filters, (filters) => {
 watch(selectedLevel, () => {
   goToPage(1);
 });
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchTopics({});
 </script>
 
 <template>
