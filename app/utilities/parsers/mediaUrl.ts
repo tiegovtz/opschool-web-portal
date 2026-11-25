@@ -1,4 +1,5 @@
 import apiDocs from "../apiDocs";
+import { resolveUploadUrl } from "../resolveUploadUrl";
 
 export const resolveMediaUrl = (src: string): string => {
   const source = src.trim();
@@ -6,10 +7,10 @@ export const resolveMediaUrl = (src: string): string => {
     return src;
   }
 
-  // Media files live at the API host's root, outside its /v1 routes.
-  const origin = new URL(apiDocs.baseURL).origin;
-  const url = new URL(source, `${origin}/`);
-  if (url.protocol !== "http:" && url.protocol !== "https:") return src;
-
-  return `${origin}${url.pathname}${url.search}${url.hash}`;
+  // Media files live at the API host's root, outside its /v1 routes. apiDocs.baseURL
+  // is a gateway-relative path (e.g. "/api/v1"), not an absolute host, so new
+  // URL(apiDocs.baseURL).origin throws unconditionally here — strip the trailing
+  // /v1 with plain string ops instead, the same way resolveUploadUrl does.
+  const root = (apiDocs.baseURL || "").replace(/\/+$/, "").replace(/\/v1$/, "");
+  return resolveUploadUrl(source, root) || src;
 };
