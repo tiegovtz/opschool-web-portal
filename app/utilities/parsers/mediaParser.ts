@@ -1,22 +1,26 @@
 import { resolveMediaUrl } from "./mediaUrl";
+import { escapeHtmlAttribute, portalPath, readMediaAttribute as readAttribute, resolveStreamUrl, streamMediaId, type MediaUrlOptions } from '../mediaUrls';
 const parseHTML = (html: string): Document => {
   return new DOMParser().parseFromString(html, "text/html");
 };
 
-const videoParser = (query: string): string => {
-  // Regular expression to match <video> tags with a <source> inside
-  const regex =
-    /<video\b([^>]*)>\s*<source\s+src="([^"]+)"(?:\s+type="([^"]+)")?\s*>\s*<\/video>/gi;
-
-  return query.replace(regex, (match, videoAttrs, sourceSrc) => {
-    // Extract video ID from sourceSrc (it might already be just the ID or a full path)
-    const videoId = sourceSrc.split("/").pop() || sourceSrc;
-    const attrsWithoutPreload = videoAttrs.replace(/\s+preload(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "");
+const videoParser = (query: string, options: MediaUrlOptions = {}): string => {
+  const regex = /<video\b([^>]*)>([\s\S]*?)<\/video>/gi;
+  return String(query || '').replace(regex, (match, videoAttrs: string, contents: string) => {
+    const sourceAttrs = contents.match(/<source\b([^>]*)>/i)?.[1] || '';
+    const sourceSrc = readAttribute(videoAttrs, 'src') || readAttribute(sourceAttrs, 'src');
+    if (!sourceSrc) return match;
+    const videoId = streamMediaId(sourceSrc, 'video') || '';
+    const videoUrl = streamMediaId(sourceSrc, 'video') ? resolveStreamUrl(sourceSrc, 'video', options) : resolveMediaUrl(sourceSrc, options);
+    const mediaType = readAttribute(sourceAttrs, 'type') || (/\.webm(?:[?#]|$)/i.test(sourceSrc) ? 'video/webm' : 'video/mp4');
+    const attrsWithoutPreload = videoAttrs
+      .replace(/\s+(?:preload|src)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, '')
+      .replace(/\s+poster\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, () => ` poster="${escapeHtmlAttribute(resolveMediaUrl(readAttribute(videoAttrs, 'poster'), options))}"`);
 
     return `
             <div class="video-container-wrapper my-4">
                 <video id='video-player' data-stream-video ${attrsWithoutPreload} controls preload="none" controlslist="nodownload" oncontextmenu="return false;" aria-label="Educational video content">
-              <source src="${`/api/video/` + sourceSrc}" type="video/mp4">
+              <source src="${escapeHtmlAttribute(videoUrl)}" type="${escapeHtmlAttribute(mediaType)}">
               Your browser does not support the video tag.
             </video>
                 <div data-video-error role="alert" hidden class="rounded-md border border-red-200 bg-red-50 p-6 text-center">
@@ -26,7 +30,7 @@ const videoParser = (query: string): string => {
                 </div>
                 <div class="flex items-center justify-end mt-3">
                     <a
-                        href="/interactive-video?videoId=${videoId}"
+                        href="${portalPath('interactive-video', options.appBaseURL)}?videoId=${encodeURIComponent(videoId)}"
                         class="interactive-video-link hidden items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         data-interactive-video-link="true"
                         data-video-id="${videoId}"
@@ -47,7 +51,7 @@ const videoParser = (query: string): string => {
 };
 
 // audio parser
-const audioParser = (html: string): string => {
+const audioParser = (html: string, options: MediaUrlOptions = {}): string => {
   const doc = parseHTML(html);
 
   const audios = doc.querySelectorAll("audio");
@@ -60,7 +64,7 @@ const audioParser = (html: string): string => {
       src = source?.getAttribute("src") ?? null;
     }
     if (!src) return;
-    src = resolveMediaUrl(src);
+    src = escapeHtmlAttribute(streamMediaId(src, 'audio') ? resolveStreamUrl(src, 'audio', options) : resolveMediaUrl(src, options));
     const wrapper = doc.createElement("div");
     wrapper.className = "audio-canvas-wrapper inline-block";
     wrapper.innerHTML = `
@@ -89,19 +93,19 @@ const audioParser = (html: string): string => {
 };
 
 // Bare <img> tags; model and experiment composites stay escaped until their parsers run.
-const imageParser = (html: string): string => {
+const imageParser = (html: string, options: MediaUrlOptions = {}): string => {
   const doc = parseHTML(html);
   doc.querySelectorAll("img[src]").forEach((image) => {
-    image.setAttribute("src", resolveMediaUrl(image.getAttribute("src")!));
+    image.setAttribute("src", resolveMediaUrl(image.getAttribute("src")!, options));
   });
   return doc.body.innerHTML;
 };
 
 // Combine the media parsers.
-const mediaParser = (html: string): string => {
-  let parsedHTML = videoParser(html);
-  parsedHTML = audioParser(parsedHTML);
-  parsedHTML = imageParser(parsedHTML);
+const mediaParser = (html: string, options: MediaUrlOptions = {}): string => {
+  let parsedHTML = videoParser(html, options);
+  parsedHTML = audioParser(parsedHTML, options);
+  parsedHTML = imageParser(parsedHTML, options);
   return parsedHTML;
 };
 export { videoParser, audioParser, imageParser, mediaParser };

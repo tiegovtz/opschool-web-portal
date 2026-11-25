@@ -239,6 +239,7 @@ const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user de
 const route = useRoute();
 const router = useRouter();
 const conversationApiBase = `${useRuntimeConfig().app.baseURL}api/conversation`;
+const mediaUrls = useMediaUrls();
 const authAccessTokenCookie = useCookie('signInAccessToken');
 const authHeaders = computed<Record<string, string>>(() => {
   const token = authAccessTokenCookie.value;
@@ -804,11 +805,7 @@ const handleSkipTurn = () => {
 };
 
 const resolvePlayableAudio = (audioUrl: string): string => {
-  if (!audioUrl) return '';
-  if (/^(blob:|data:)/i.test(audioUrl)) return audioUrl;
-  if (/^https?:\/\//i.test(audioUrl)) return audioUrl;
-  if (audioUrl.startsWith('/')) return audioUrl;
-  return `/${audioUrl}`;
+  return mediaUrls.audio(audioUrl);
 };
 
 const getPiperAudioForText = async (

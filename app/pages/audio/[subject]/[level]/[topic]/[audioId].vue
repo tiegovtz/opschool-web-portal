@@ -1,15 +1,17 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
+import CardImage from '~/components/home/CardImage.vue';
 import { ref, watchEffect, onMounted, onUnmounted } from "vue";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 
 const route = useRoute();
 const router = useRouter();
-const audioId = route.fullPath.split("/").pop();
+const mediaUrls = useMediaUrls();
+const audioId = String(route.params.audioId || '');
 const audioTitle = decodeURIComponent(route.fullPath.split("/")[4]?.replaceAll("-", " "));
 const audioStandard = decodeURIComponent(route.fullPath.split("/")[2]);
 const audioSubject = decodeURIComponent(route.fullPath.split("/")[3]);
-const audioUrl = `/api/audio/${audioId}`;
+const audioUrl = mediaUrls.audio(audioId);
 
 // Head meta
 useHead({
@@ -207,7 +209,7 @@ const goBack = () => {
 
                     <div class="flex items-center w-full h-full gap-4 my-4" v-if="audioInfo">
                         <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
-                            <NuxtImg :src="audioInfo?.thumbnail" :alt="audioInfo?.name"
+                            <CardImage :src="audioInfo?.thumbnail" :alt="audioInfo?.name" :width="112" :height="112"
                                 class="object-cover w-full h-full" />
                         </div>
                         <div class="flex w-full">

@@ -11,12 +11,11 @@ const props = withDefaults(defineProps<{
 
 const $img = useImage();
 const config = useRuntimeConfig();
+const mediaUrls = useMediaUrls();
 const optimizationAttempt = ref(0);
 const failedSource = ref(false);
 const source = computed(() => {
-  if (failedSource.value) return "/images/default.webp";
-  const value = props.src?.trim() || "/images/default.webp";
-  return value.startsWith("/public/") ? value.slice("/public".length) : value;
+  return mediaUrls.asset(failedSource.value ? '/images/default.webp' : props.src?.trim() || '/images/default.webp');
 });
 watch(() => props.src, () => {
   optimizationAttempt.value = 0;
@@ -25,14 +24,14 @@ watch(() => props.src, () => {
 const handleImageError = () => {
   if (optimizedSource.value) {
     optimizationAttempt.value++;
-  } else if (source.value !== "/images/default.webp") {
+  } else if (source.value !== mediaUrls.asset('/images/default.webp')) {
     failedSource.value = true;
     optimizationAttempt.value = 0;
   }
 };
 const isOptimizable = (value: string) => {
   if (/\.(?:gif|svg)(?:[?#]|$)/i.test(value)) return false;
-  if (value.startsWith("/") && !value.startsWith("//")) return true;
+  if (value.startsWith("/") && !value.startsWith("//")) return !/\/api\//i.test(value);
   try {
     const url = new URL(value);
     return ["http:", "https:"].includes(url.protocol) && $img.options.domains.includes(url.host);
@@ -43,7 +42,9 @@ const isOptimizable = (value: string) => {
 const optimizationSources = computed(() => {
   // Try the stored public URL first. An internal origin can depend on proxy
   // virtual-host routing, so use it only if fetching the public image fails.
-  const sources = [source.value];
+  const appBase = config.app?.baseURL?.replace(/\/+$/, '');
+  const localSource = appBase && source.value.startsWith(`${appBase}/`) ? source.value.slice(appBase.length) : source.value;
+  const sources = [localSource];
   const origin = String(config.public.imageFetchOrigin || "").trim().replace(/\/+$/, "");
   try {
     const parsed = new URL(source.value);

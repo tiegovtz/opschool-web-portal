@@ -7,6 +7,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
+    "test:media": "node --test scripts/media-urls.test.mjs scripts/media-stream.test.mjs",
     "test:conversation": "node --test scripts/conversation-practice.test.mjs scripts/conversation-api.test.mjs",
     "test:auth-session": "node --experimental-strip-types --test scripts/auth-session.test.mjs",
     "test:images": "node --test scripts/images.test.mjs scripts/card-image.test.mjs",

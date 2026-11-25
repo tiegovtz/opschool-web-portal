@@ -295,6 +295,7 @@ definePageMeta({
 const router = useRouter()
 const route = useRoute()
 const conversationApiBase = `${useRuntimeConfig().app.baseURL}api/conversation`
+const mediaUrls = useMediaUrls()
 const authAccessTokenCookie = useCookie('signInAccessToken')
 const authHeaders = computed(() =>
   authAccessTokenCookie.value
@@ -919,7 +920,7 @@ const playCurrentPiece = async () => {
 
     if (disposed || version !== sessionVersion) return
     if (response.success && (response.audioBase64 || response.audioUrl)) {
-      let resolvedUrl = response.audioUrl
+      let resolvedUrl = response.audioUrl ? mediaUrls.audio(response.audioUrl) : ''
       if (response.audioBase64) {
         const binary = atob(response.audioBase64)
         const bytes = new Uint8Array(binary.length)

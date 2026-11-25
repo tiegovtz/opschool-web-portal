@@ -1,6 +1,7 @@
 import { resolveMediaUrl } from "./mediaUrl";
+import { escapeHtmlAttribute, type MediaUrlOptions } from '../mediaUrls';
 
-const modelParser = (query:String) => {
+const modelParser = (query: string, options: MediaUrlOptions = {}) => {
     // Regular expression to match the model and image URLs along with any attributes
     const regex = /model="([^"]+)",&lt;img src="([^"]+)" alt="([^"]+)"&gt;/g;
 
@@ -8,9 +9,9 @@ const modelParser = (query:String) => {
     return query.replace(regex, (match, modelSrc, imgSrc, altText) => {
         return `<model-viewer
                 
-              src="${resolveMediaUrl(modelSrc)}"
-              poster="${resolveMediaUrl(imgSrc)}"
-              alt="${altText}"
+              src="${escapeHtmlAttribute(resolveMediaUrl(modelSrc, options))}"
+              poster="${escapeHtmlAttribute(resolveMediaUrl(imgSrc, options))}"
+              alt="${escapeHtmlAttribute(altText)}"
               auto-rotate
               camera-controls
               shadow-intensity="0.4"

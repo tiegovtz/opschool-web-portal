@@ -6,6 +6,9 @@ import vm from 'node:vm';
 import { compileScript, parse } from 'vue/compiler-sfc';
 import { transpileModule } from 'typescript';
 import * as vue from 'vue';
+import { loadMediaModule } from './media-test-helpers.mjs';
+
+const { resolveStreamUrl } = loadMediaModule('../app/utilities/mediaUrls.ts');
 
 const filename = new URL('../app/pages/conversation-practice/index.vue', import.meta.url);
 const { descriptor } = parse(await readFile(filename, 'utf8'));
@@ -42,6 +45,7 @@ function mount(t, fetcher = async () => ({ pieces: ['First?', 'Second?'], entrie
     useRouter: () => ({ push() {}, back() {} }),
     useCookie: () => vue.ref('student-token'),
     useRuntimeConfig: () => ({ app: { baseURL: '/portal/' } }),
+    useMediaUrls: () => ({ audio: src => resolveStreamUrl(src, 'audio', { appBaseURL: '/portal/' }) }),
     $fetch: async (url, options) => { requests.push({ url, options }); return fetcher(url, options); },
     window, document: { body: { style: { overflow: '' } } }, navigator,
     URL, URLSearchParams, console,

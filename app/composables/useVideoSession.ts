@@ -3,6 +3,7 @@ import type { VideoSession, VideoInteraction } from '~/types/video-quiz.interfac
 import apiDocs from '~/utilities/apiDocs';
 
 export const useVideoSession = (videoId: string, userId: string) => {
+  const mediaUrls = useMediaUrls();
   const currentSession = ref<VideoSession | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
@@ -11,9 +12,9 @@ export const useVideoSession = (videoId: string, userId: string) => {
   const onSessionUpdated = ref<((session: VideoSession) => void) | null>(null);
   const onError = ref<((error: string) => void) | null>(null);
   const sessionEndpoints = {
-    create: `/api/video/${videoId}/sessions`,
-    read: (sessionId: string) => `/api/video/${videoId}/sessions/${sessionId}`,
-    update: (sessionId: string) => `/api/video/${videoId}/sessions/${sessionId}`,
+    create: mediaUrls.portal(`api/video/${encodeURIComponent(videoId)}/sessions`),
+    read: (sessionId: string) => mediaUrls.portal(`api/video/${encodeURIComponent(videoId)}/sessions/${encodeURIComponent(sessionId)}`),
+    update: (sessionId: string) => mediaUrls.portal(`api/video/${encodeURIComponent(videoId)}/sessions/${encodeURIComponent(sessionId)}`),
   };
 
   /**

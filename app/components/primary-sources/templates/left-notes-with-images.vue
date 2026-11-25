@@ -8,6 +8,7 @@ const props = defineProps<{
   notesLabel?: string;
   imageAlt?: string;
 }>();
+const mediaUrls = useMediaUrls();
 
 const notesRegionId = "left-notes-with-images-notes";
 const imageRegionId = "left-notes-with-images-image";
@@ -51,7 +52,7 @@ const accessibleImageAlt = computed(() => props.imageAlt?.trim() || "Activity il
       :aria-label="accessibleImageAlt"
       tabindex="0"
     >
-      <img :src="image" :alt="accessibleImageAlt" class="object-contain mx-auto h-full" />
+      <img :src="mediaUrls.asset(image)" :alt="accessibleImageAlt" class="object-contain mx-auto h-full" />
     </figure>
   </div>
 </template>

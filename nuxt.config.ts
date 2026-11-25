@@ -5,6 +5,7 @@ import { clearDevServiceWorker } from "./scripts/clear-dev-service-worker.mjs";
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
   process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN,
+  process.env.NUXT_PUBLIC_UPLOADS_BASE_URL,
   "http://41.59.251.166",
   "https://opschool.tie.go.tz",
 ].flatMap((value) => {
@@ -73,7 +74,7 @@ export default defineNuxtConfig({
       // Falls back to "/api" (gateway-relative, not an absolute host) so
       // environments that leave VITE_API_BASE_URL unset still resolve
       // uploads against their own gateway instead of a hardcoded host.
-      uploadsBaseUrl: (process.env.VITE_API_BASE_URL || "/api/v1").replace(/\/v1\/?$/, ""),
+      uploadsBaseUrl: process.env.NUXT_PUBLIC_UPLOADS_BASE_URL || (process.env.VITE_API_BASE_URL || "/api/v1").replace(/\/v\d+\/?$/, ""),
     },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",

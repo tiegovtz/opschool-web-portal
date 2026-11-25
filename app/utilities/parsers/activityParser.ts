@@ -1,6 +1,8 @@
 import { activityPopupId, experimrntUrl } from "../controlls";
+import { resolveMediaUrl } from './mediaUrl';
+import { escapeHtmlAttribute, type MediaUrlOptions } from '../mediaUrls';
 
-const activityParser = (query: string): string => {
+const activityParser = (query: string, options: MediaUrlOptions = {}): string => {
   const source = String(query || "");
   const regex = /activity(?:Id)?="([^"]+)"((?:,\s*[a-zA-Z]+="[^"]*")*)/g;
 
@@ -24,7 +26,7 @@ const activityParser = (query: string): string => {
         aria-label="click to open ${title}" 
       >
       <p class="z-10 mt-2 font-semibold text-black bg-white rounded-md !p-2  text-wrap">${title}</p>
-      <img src="${thumbnail || '/images/activites-placeholder-converted.webp'}" alt="${title}" class="absolute z-0 inset-0 w-full h-auto object-cover rounded-md" />
+      <img src="${escapeHtmlAttribute(resolveMediaUrl(thumbnail || '/images/activites-placeholder-converted.webp', options))}" alt="${escapeHtmlAttribute(title)}" class="absolute z-0 inset-0 w-full h-auto object-cover rounded-md" />
       </button>`;
   });
 };

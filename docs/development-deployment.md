@@ -28,6 +28,10 @@ Card images optimize their public URL first. Set `NUXT_PUBLIC_IMAGE_FETCH_ORIGIN
 
 The service worker sends audio, video, and all byte-range requests to the network without caching. Its API rules resolve paths relative to the service worker so they also apply under `/portal/`. After deploying, reload once the updated service worker activates. To diagnose a browser still using the previous worker, unregister it in browser developer tools and reload.
 
+Dynamic chapter media, experiment packages, 3D models, thumbnails, figures, and conversation audio use the same URL rules. Relative uploads and uploads stored against known old backend hosts resolve against `NUXT_PUBLIC_UPLOADS_BASE_URL`, or the uploads root derived from `VITE_API_BASE_URL` when no override is set. Set the public override to `/api` for gateway uploads when the server backend URL is internal. External CDN URLs and their query strings are preserved. App routes and public assets use Nuxt's configured base path. Existing database content does not need to be rewritten.
+
+Video and audio proxy responses preserve byte ranges, conditional requests and HEAD metadata. They use stream backpressure, cancel upstream reads when the player disconnects, and send `X-Accel-Buffering: no` for nginx. The 20-second connection/header timeout is cleared once streaming starts; playback has no fixed total timeout. If playback still cuts off after a repeatable idle interval, check the reverse proxy's read/send timeouts and the upstream media service logs. Verify actual backend media, since the deployment's bundled-image check does not exercise authenticated streams.
+
 To observe optimization on the server:
 
 ```bash

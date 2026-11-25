@@ -80,6 +80,7 @@ type Segment =
   | { kind: "graph" | "chart" | "geometry" | "steps"; spec: Record<string, any> };
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
+const mediaUrls = useMediaUrls();
 const props = defineProps<{ message: any; language?: LanguageSupport; isStreaming?: boolean }>();
 const copyText = computed(() => (props.message.parts || [])
   .filter((part: { type: string; text?: string }) => part.type === "text" && typeof part.text === "string")
@@ -218,7 +219,7 @@ const processMathInText = (text: string): string => {
           const altText = imageMeta.alts?.[idx] || imageMeta.alt;
           return `<div class="flex flex-col items-center">
             <img 
-              src="${imgPath}" 
+              src="${mediaUrls.asset(imgPath)}"
               alt="${altText}" 
               class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
               loading="lazy"
@@ -239,7 +240,7 @@ const processMathInText = (text: string): string => {
         // Images that fail to load will be silently hidden (no error message shown to users)
         imageHtml = `<div class="my-4 flex justify-center">
         <img 
-          src="${imageMeta.path}" 
+          src="${mediaUrls.asset(imageMeta.path)}"
           alt="${imageMeta.alt}" 
           class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
           loading="lazy"
@@ -343,14 +344,14 @@ const processMathInText = (text: string): string => {
           const imageGrid = imageMeta.paths.map((imgPath, idx) => {
             const altText = imageMeta.alts?.[idx] || imageMeta.alt;
             return `<div class="flex flex-col items-center">
-              <img src="${imgPath}" alt="${altText}" class="max-w-full h-auto rounded-lg shadow-md border border-gray-200" loading="lazy" onerror="this.parentElement.style.display='none';" />
+              <img src="${mediaUrls.asset(imgPath)}" alt="${altText}" class="max-w-full h-auto rounded-lg shadow-md border border-gray-200" loading="lazy" onerror="this.parentElement.style.display='none';" />
               <span class="text-xs text-gray-500 mt-1">${altText}</span>
             </div>`;
           }).join('');
           return `<div class="my-4"><div class="grid grid-cols-2 md:grid-cols-${gridCols} gap-3">${imageGrid}</div><p class="text-center text-sm text-gray-600 mt-2 font-medium">${imageMeta.alt}</p></div>`;
         } else if (imageMeta.path) {
           // Single image
-          return `<div class="my-4 flex justify-center"><img src="${imageMeta.path}" alt="${imageMeta.alt}" class="max-w-full h-auto rounded-lg shadow-md border border-gray-200" loading="lazy" onerror="this.parentElement.style.display='none';" /></div>`;
+          return `<div class="my-4 flex justify-center"><img src="${mediaUrls.asset(imageMeta.path)}" alt="${imageMeta.alt}" class="max-w-full h-auto rounded-lg shadow-md border border-gray-200" loading="lazy" onerror="this.parentElement.style.display='none';" /></div>`;
         }
       }
       // If shortcode not in cache, return empty (image will appear on re-render when cache loads)

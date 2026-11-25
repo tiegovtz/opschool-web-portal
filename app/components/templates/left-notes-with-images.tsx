@@ -12,6 +12,7 @@ export default defineComponent({
     className: String,
   },
   setup(props) {
+    const mediaUrls = useMediaUrls();
     return () => (
       <aside
         class={cn(
@@ -23,7 +24,7 @@ export default defineComponent({
           {props.image ? (
             <div class="overflow-hidden rounded-xl border border-oceanBlue/10 bg-sky-50">
               <img
-                src={props.image}
+                src={mediaUrls.asset(props.image)}
                 alt="Activity note"
                 class="h-auto max-h-72 w-full object-contain"
               />
