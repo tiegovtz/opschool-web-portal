@@ -7,6 +7,7 @@
 
 import type { ApiFigure, MappedFigure, GetFiguresOptions } from '~/types/figures.interface';
 import apiDocs from '~/utilities/apiDocs';
+import { resolveMediaUrl } from './parsers/mediaUrl';
 
 // Always go through the portal's own backend proxy (apiDocs.requestBaseURL), not a
 // hardcoded external host - Config.FIGURES_API_BASE_URL was never actually set, so this
@@ -115,6 +116,8 @@ function mapApiFigureToJsonFormat(apiFigure: ApiFigure): MappedFigure {
     mapped.page_number = apiFigure.page_number;
   }
 
+  if (mapped.path) mapped.path = resolveMediaUrl(mapped.path);
+  if (mapped.paths) mapped.paths = mapped.paths.map(path => resolveMediaUrl(path));
   return mapped;
 }
 

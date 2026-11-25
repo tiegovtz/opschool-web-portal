@@ -1,5 +1,6 @@
 import { jwtDecode } from "jwt-decode";
 import apiDocs from "./apiDocs";
+import { readSessionCookies, SESSION_END_KEY } from '~~/shared/auth/session';
 
 const authCookieOptions = {
   httpOnly: false,
@@ -35,7 +36,7 @@ const isTokenExpiringSoon = (token, thresholdInSeconds = 300) => {
   try {
     const { exp } = jwtDecode(token);
     const now = Math.floor(Date.now() / 1000);
-    return exp - now <= thresholdInSeconds;
+    return !Number.isFinite(exp) || exp - now <= thresholdInSeconds;
   } catch (e) {
     console.error("Invalid JWT", e);
     return true; // Assume expired if token is invalid
@@ -61,6 +62,12 @@ const refreshToken = async () => {
       return null;
     }
 
+    const requestedRefreshToken = refreshTokenCookie.value;
+    const readEndMarker = () => {
+      try { return localStorage.getItem(SESSION_END_KEY); } catch { return null; }
+    };
+    const endMarker = import.meta.client ? readEndMarker() : null;
+
     const response = await fetch(apiDocs.auth.refreshToken, {
       method: "POST",
       headers: {
@@ -75,6 +82,11 @@ const refreshToken = async () => {
     }
 
     const payload = await response.json();
+
+    if (import.meta.client && (
+      readSessionCookies(document.cookie).refreshToken !== requestedRefreshToken ||
+      readEndMarker() !== endMarker
+    )) return null;
 
     if (payload?.access_token) {
       accessToken.value = payload.access_token;

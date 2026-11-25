@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import { createApiDocs } from '../app/utilities/apiDocs.ts';
@@ -17,10 +18,62 @@ test('browser API URLs use the proxy while media URLs retain their upstream base
 
 test('production backend proxy contract', async t => {
   const requests = [];
+  let slowStreamsClosed = 0;
   const upstream = createServer(async (req, res) => {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     requests.push({ url: req.url, method: req.method, headers: req.headers, body: Buffer.concat(chunks) });
+    if (/^\/api\/v1\/conversations\/(engage|constant)\/test-chapter$/.test(req.url)) {
+      const type = req.url.includes('/constant/') ? 'constant' : 'engage';
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify([
+        { text: 'Second', order: 2, identifier: 'test-dialogue', type, audioFile: '/uploads/second.wav' },
+        { text: 'First', order: 1, identifier: 'test-dialogue', type, audioFile: '/uploads/first.wav' },
+      ]));
+    }
+    const media = /^\/api\/v1\/(video|audio)-stream\/([^/?]+)$/.exec(req.url);
+    if (media) {
+      const kind = media[1];
+      const id = media[2];
+      const contentType = kind === 'video' ? 'video/mp4' : 'audio/mpeg';
+      if (id === 'slow') {
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.flushHeaders();
+        res.write(Buffer.alloc(32768, 1));
+        const timer = setInterval(() => res.write(Buffer.alloc(32768, 2)), 20);
+        timer.unref();
+        res.on('close', () => { clearInterval(timer); slowStreamsClosed++; });
+        return;
+      }
+      if (id === 'broken') {
+        res.writeHead(200, { 'Content-Type': contentType, 'Content-Length': '1000' });
+        res.flushHeaders();
+        res.write(Buffer.alloc(10, 1));
+        setTimeout(() => res.destroy(), 80).unref();
+        return;
+      }
+      if (id === 'compressed') {
+        const encoded = gzipSync(Buffer.from('decompressed media bytes'));
+        res.writeHead(200, { 'Content-Type': contentType, 'Content-Encoding': 'gzip', 'Content-Length': String(encoded.length) });
+        return res.end(encoded);
+      }
+      const video = Buffer.from(`${kind}-stream-range-test`);
+      const range = req.headers['if-range'] && req.headers['if-range'] !== '"media-v1"'
+        ? null : /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+      const start = range ? (range[1] ? Number(range[1]) : Math.max(0, video.length - Number(range[2]))) : 0;
+      const end = range && range[1] && range[2] ? Math.min(Number(range[2]), video.length - 1) : video.length - 1;
+      if (start >= video.length || end < start) {
+        res.writeHead(416, { 'Content-Range': `bytes */${video.length}`, 'Accept-Ranges': 'bytes' });
+        return res.end();
+      }
+      res.writeHead(range ? 206 : 200, {
+        'Content-Type': contentType, 'Accept-Ranges': 'bytes', ETag: '"media-v1"',
+        'Cache-Control': 'public, max-age=3600',
+        'Content-Length': end - start + 1,
+        ...(range ? { 'Content-Range': `bytes ${start}-${end}/${video.length}` } : {}),
+      });
+      return res.end(req.method === 'HEAD' ? undefined : video.subarray(start, end + 1));
+    }
     if (req.url === '/api/v1/unavailable') return req.socket.destroy();
     if (req.url === '/api/v1/redirect') {
       res.writeHead(302, { Location: '/outside-the-api' });
@@ -139,5 +192,98 @@ test('production backend proxy contract', async t => {
     assert.deepEqual(await response.json(), { ok: true });
     assert.equal(requests.at(-1).url, '/api/v1/topics');
     assert.equal(requests.at(-1).headers.authorization, 'Bearer test-token');
+  });
+
+  await t.test('video streaming preserves complete and partial bytes and requires a session', async () => {
+    const count = requests.length;
+    assert.equal((await fetch(`${base}/api/video/test-video`)).status, 401);
+    assert.equal(requests.length, count);
+    for (const range of [undefined, 'bytes=0-0', 'bytes=6-11']) {
+      const response = await fetch(`${base}/api/video/test-video`, {
+        headers: { Cookie: 'signInAccessToken=test-token', ...(range ? { Range: range } : {}) },
+      });
+      assert.equal(response.status, range ? 206 : 200);
+      assert.equal(response.headers.get('content-type'), 'video/mp4');
+      assert.equal(response.headers.get('accept-ranges'), 'bytes');
+      const expected = range === 'bytes=0-0' ? 'v' : range ? 'stream' : 'video-stream-range-test';
+      assert.equal(response.headers.get('content-length'), String(expected.length));
+      assert.equal(response.headers.get('content-range'), range === 'bytes=0-0' ? 'bytes 0-0/23' : range ? 'bytes 6-11/23' : null);
+      assert.equal(await response.text(), expected);
+      assert.equal(requests.at(-1).headers.range, range);
+      assert.equal(requests.at(-1).headers.authorization, 'Bearer test-token');
+    }
+  });
+
+  await t.test('conversation routes share the runtime backend and accept cookie or Bearer sessions', async () => {
+    for (const [endpoint, type, headers] of [
+      ['engage', 'engage', { Cookie: 'signInAccessToken=test-token' }],
+      ['constant-audio', 'constant', { Authorization: 'Bearer test-token' }],
+    ]) {
+      const response = await fetch(`${base}/api/conversation/${endpoint}?chapterId=test-chapter&identifier=test-dialogue`, { headers });
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.deepEqual(endpoint === 'engage' ? data.pieces : data.items.map(item => item.text), ['First', 'Second']);
+      assert.equal(requests.at(-1).url, `/api/v1/conversations/${type}/test-chapter`);
+      assert.equal(requests.at(-1).headers.authorization, 'Bearer test-token');
+      assert.equal((await fetch(`${base}/api/conversation/${endpoint}`, { headers })).status, 400);
+    }
+  });
+
+  await t.test('video and audio preserve seeks, HEAD metadata, validators and 416 responses', async () => {
+    const auth = { Authorization: 'Bearer test-token' };
+    for (const kind of ['video', 'audio']) {
+      const url = `${base}/api/${kind}/test-${kind}`;
+      for (const [range, expected] of [['bytes=6-', 'stream-range-test'], ['bytes=-4', 'test']]) {
+        const response = await fetch(url, { headers: { ...auth, Range: range, 'If-Range': '"media-v1"' } });
+        assert.equal(response.status, 206);
+        assert.equal(await response.text(), expected);
+        assert.equal(requests.at(-1).headers['if-range'], '"media-v1"');
+        assert.match(requests.at(-1).headers['accept-encoding'], /^identity(?:,\s*identity)*$/);
+        assert.equal(response.headers.get('cache-control'), 'private, no-store');
+      }
+      const changed = await fetch(url, { headers: { ...auth, Range: 'bytes=6-', 'If-Range': '"outdated"' } });
+      assert.equal(changed.status, 200);
+      assert.equal(await changed.text(), `${kind}-stream-range-test`);
+      const invalid = await fetch(url, { headers: { ...auth, Range: 'bytes=999-' } });
+      assert.equal(invalid.status, 416);
+      assert.equal(invalid.headers.get('content-range'), 'bytes */23');
+      await invalid.arrayBuffer();
+      const head = await fetch(url, { method: 'HEAD', headers: auth });
+      assert.equal(head.status, 200);
+      assert.equal(head.headers.get('content-length'), '23');
+      assert.equal((await head.arrayBuffer()).byteLength, 0);
+      assert.equal(requests.at(-1).method, 'HEAD');
+    }
+  });
+
+  await t.test('playback streams incrementally and cancelling it closes the upstream connection', async () => {
+    const response = await fetch(`${base}/api/video/slow`, { headers: { Authorization: 'Bearer test-token' } });
+    assert.equal(response.status, 200);
+    const reader = response.body.getReader();
+    assert.ok((await reader.read()).value.length > 0);
+    assert.equal(slowStreamsClosed, 0);
+    await delay(40);
+    assert.ok((await reader.read()).value.length > 0);
+    await reader.cancel();
+    for (let attempt = 0; attempt < 100 && !slowStreamsClosed; attempt++) await delay(10);
+    assert.equal(slowStreamsClosed, 1);
+  });
+
+  await t.test('an upstream interruption ends the broken stream and permits a fresh request', async () => {
+    const response = await fetch(`${base}/api/video/broken`, { headers: { Authorization: 'Bearer test-token' } });
+    assert.equal(response.status, 200);
+    await assert.rejects(response.arrayBuffer());
+    const retry = await fetch(`${base}/api/video/test-video`, { headers: { Authorization: 'Bearer test-token', Range: 'bytes=0-0' } });
+    assert.equal(retry.status, 206);
+    assert.equal(await retry.text(), 'v');
+    assert.ok(!output.includes('unhandledRejection'));
+  });
+
+  await t.test('compressed upstream media does not produce mismatched response lengths', async () => {
+    const response = await fetch(`${base}/api/audio/compressed`, { headers: { Authorization: 'Bearer test-token' } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-length'), null);
+    assert.equal(response.headers.get('content-encoding'), null);
+    assert.equal(await response.text(), 'decompressed media bytes');
   });
 });

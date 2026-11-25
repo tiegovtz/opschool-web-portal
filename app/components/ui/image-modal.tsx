@@ -29,13 +29,14 @@ const ImageModal = defineComponent({
     className: String,
   },
   setup(props, { slots }) {
+    const mediaUrls = useMediaUrls();
     return () => (
       <Dialog>
         <DialogTrigger asChild>
           {slots.default?.() || (
             <button class="cursor-pointer transition-opacity hover:opacity-80">
               <img
-                src={props.src}
+                src={mediaUrls.asset(props.src)}
                 alt={props.alt}
                 class={cn(
                   "h-auto w-full max-w-md rounded-2xl border border-oceanBlue/10 bg-white object-cover shadow-sm",
@@ -50,7 +51,7 @@ const ImageModal = defineComponent({
           <DialogTitle class="sr-only">Image preview</DialogTitle>
           <div class="relative flex items-center justify-center">
             <img
-              src={props.src}
+              src={mediaUrls.asset(props.src)}
               alt={props.alt}
               class="h-auto max-h-[90vh] w-auto max-w-full cursor-pointer rounded-2xl object-contain shadow-2xl"
               onClick={(event: MouseEvent) => event.stopPropagation()}

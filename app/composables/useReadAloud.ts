@@ -7,6 +7,7 @@ type TtsInlineResponse = {
 };
 
 export const useReadAloud = () => {
+  const mediaUrls = useMediaUrls();
   const isPlaying = ref(false);
   const currentPlaybackWordIndex = ref(-1);
   const hasPlayed = ref(false);
@@ -36,7 +37,7 @@ export const useReadAloud = () => {
     text: string,
     voiceType: 'male' | 'female' = 'female'
   ): Promise<string> => {
-    const response = await $fetch<TtsInlineResponse>('/api/conversation/tts', {
+    const response = await $fetch<TtsInlineResponse>(mediaUrls.portal('api/conversation/tts'), {
       method: 'POST',
       body: {
         text,

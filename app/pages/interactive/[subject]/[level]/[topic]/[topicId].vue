@@ -30,8 +30,8 @@ import {
 } from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
-const runtimeConfig = useRuntimeConfig();
-const uploadsBaseUrl = runtimeConfig.public.uploadsBaseUrl as string;
+const appBaseURL = useRuntimeConfig().app.baseURL;
+const mediaUrls = useMediaUrls();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
@@ -327,7 +327,7 @@ onUnmounted(() => window.removeEventListener("scroll", updateActiveSection));
 
 // Helper functions 
 const ensureAccessTokenValid = async () => {
-  if (isTokenExpiringSoon(signInAccessToken.value as string, 60)) {
+  if (isTokenExpiringSoon(signInAccessToken.value as string, 0)) {
     await redirectToAuth();
     return false;
   }
@@ -1366,7 +1366,7 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div class="mx-auto notes md:px-4 w-full max-w-7xl flex-1" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content, uploadsBaseUrl), uploadsBaseUrl), uploadsBaseUrl))))">
+              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content, mediaUrls.options), mediaUrls.options), mediaUrls.options), mediaUrls.options), appBaseURL))">
             </div>
 
             <p id="notes-extra-details" class="sr-only">

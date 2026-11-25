@@ -10,6 +10,14 @@ import {
 import GlobalLauncher from '@/components/assistant/GlobalLauncher.vue'
 import TieAiTeacherModalHost from '@/components/assistant/TieAiTeacherModalHost.vue'
 
+const config = useRuntimeConfig()
+useHead({
+  link: [
+    { rel: 'icon', type: 'image/x-icon', href: `${config.app.baseURL}favicon.ico` },
+    { rel: 'apple-touch-icon', href: `${config.app.baseURL}apple-touch-icon.png`, sizes: '180x180' },
+  ],
+})
+
 // Resize state
 const widthGreater1280 = computed(() => screenWidth.value >= 1280)
 const widthGreater1024 = computed(() => screenWidth.value >= 1024 && screenWidth.value < 1280)

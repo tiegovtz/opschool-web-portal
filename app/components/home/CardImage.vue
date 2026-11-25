@@ -11,49 +11,58 @@ const props = withDefaults(defineProps<{
 
 const $img = useImage();
 const config = useRuntimeConfig();
-const failedOptimization = ref(false);
+const mediaUrls = useMediaUrls();
+const optimizationAttempt = ref(0);
 const failedSource = ref(false);
 const source = computed(() => {
-  if (failedSource.value) return "/images/default.webp";
-  const value = props.src?.trim() || "/images/default.webp";
-  return value.startsWith("/public/") ? value.slice("/public".length) : value;
+  return mediaUrls.asset(failedSource.value ? '/images/default.webp' : props.src?.trim() || '/images/default.webp');
 });
 watch(() => props.src, () => {
-  failedOptimization.value = false;
+  optimizationAttempt.value = 0;
   failedSource.value = false;
 });
 const handleImageError = () => {
-  if (optimizable.value && !failedOptimization.value) {
-    failedOptimization.value = true;
-  } else if (source.value !== "/images/default.webp") {
+  if (optimizedSource.value) {
+    optimizationAttempt.value++;
+  } else if (source.value !== mediaUrls.asset('/images/default.webp')) {
     failedSource.value = true;
+    optimizationAttempt.value = 0;
   }
 };
-const optimizedSource = computed(() => {
-  // Use a configured server-reachable origin for backend uploads when needed.
-  const origin = String(config.public.imageFetchOrigin || "").trim().replace(/\/+$/, "");
-  const publicUploads = "http://41.59.251.166/api/uploads/";
-  return origin && source.value.startsWith(publicUploads)
-    ? `${origin}/api/uploads/${source.value.slice(publicUploads.length)}`
-    : source.value;
-});
-const optimizable = computed(() => {
-  if (/\.(?:gif|svg)(?:[?#]|$)/i.test(optimizedSource.value)) return false;
-  if (optimizedSource.value.startsWith("/") && !optimizedSource.value.startsWith("//")) return true;
+const isOptimizable = (value: string) => {
+  if (/\.(?:gif|svg)(?:[?#]|$)/i.test(value)) return false;
+  if (value.startsWith("/") && !value.startsWith("//")) return !/\/api\//i.test(value);
   try {
-    const url = new URL(optimizedSource.value);
+    const url = new URL(value);
     return ["http:", "https:"].includes(url.protocol) && $img.options.domains.includes(url.host);
   } catch {
     return false;
   }
+};
+const optimizationSources = computed(() => {
+  // Try the stored public URL first. An internal origin can depend on proxy
+  // virtual-host routing, so use it only if fetching the public image fails.
+  const appBase = config.app?.baseURL?.replace(/\/+$/, '');
+  const localSource = appBase && source.value.startsWith(`${appBase}/`) ? source.value.slice(appBase.length) : source.value;
+  const sources = [localSource];
+  const origin = String(config.public.imageFetchOrigin || "").trim().replace(/\/+$/, "");
+  try {
+    const parsed = new URL(source.value);
+    if (origin && ["http:", "https:"].includes(parsed.protocol)) {
+      sources.push(`${origin}${parsed.pathname}${parsed.search}${parsed.hash}`);
+    }
+  } catch {
+    // Local assets need no alternate fetch origin.
+  }
+  return [...new Set(sources)].filter(isOptimizable);
 });
-const imageSrc = computed(() => optimizable.value
-  && !failedOptimization.value
+const optimizedSource = computed(() => optimizationSources.value[optimizationAttempt.value]);
+const imageSrc = computed(() => optimizedSource.value
   ? $img(optimizedSource.value, { width: props.width, format: "webp", quality: 70 })
   : source.value,
 );
 const imageSrcset = computed(() => {
-  if (!optimizable.value || failedOptimization.value) return undefined;
+  if (!optimizedSource.value) return undefined;
   const smallWidth = Math.max(1, Math.round(props.width / 2));
   return `${$img(optimizedSource.value, { width: smallWidth, format: "webp", quality: 70 })} ${smallWidth}w, ${imageSrc.value} ${props.width}w`;
 });

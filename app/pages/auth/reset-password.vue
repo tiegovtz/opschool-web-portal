@@ -178,14 +178,14 @@ const toggleConfirmPassword = () => {
             <h1 class="font-bold text-center text-large" id="resete-password-heading" ref="headingRef" tabindex="-1">
                 Reset Password
             </h1>
-            
+
             <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
                 <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full"
                     alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
             </NuxtLink>
-            
+
             <form @submit.prevent="resetPassword"
-                class="px-4 md:min-h-[200px] h-dvh md:h-auto text-textGray overflow-y-auto text-extraSmall">
+                class="px-4 md:min-h-[250px] h-dvh md:h-auto text-textGray overflow-y-auto text-extraSmall">
                 <!-- New Password -->
                 <div :class="[
                     'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
@@ -201,21 +201,20 @@ const toggleConfirmPassword = () => {
                         <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
                             class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
                     </div>
-                    <ul id="reset-password-requirements" class="w-full space-y-1 text-smallest">
-                        <li v-for="item in passwordChecklist" :key="item.label" class="flex items-start gap-2"
-                            :class="item.met ? 'text-green-700' : 'text-textGray/70'">
-                            <span aria-hidden="true">{{ item.met ? '✓' : '○' }}</span>
-                            <span class="sr-only">{{ item.met ? 'Met' : 'Not met' }}:</span>
-                            <span>{{ item.label }}</span>
-                        </li>
-                    </ul>
-
                     <!-- New Password error message -->
                     <small v-if="userResetPassword.controller.errors.password" id="reset-password-error"
                         class="w-full text-red-500 text-smallest">
                         {{ userResetPassword.controller.errors.password }}
                     </small>
                 </div>
+                <ul id="reset-password-requirements" class="w-full space-y-1 text-smallest">
+                    <li v-for="item in passwordChecklist" :key="item.label" class="flex items-start gap-2"
+                        :class="item.met ? 'text-green-700' : 'text-textGray/70'">
+                        <span aria-hidden="true">{{ item.met ? '✓' : '○' }}</span>
+                        <span class="sr-only">{{ item.met ? 'Met' : 'Not met' }}:</span>
+                        <span>{{ item.label }}</span>
+                    </li>
+                </ul>
 
                 <!-- Confirm Password -->
                 <div :class="[

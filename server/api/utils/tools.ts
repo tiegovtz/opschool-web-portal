@@ -8,8 +8,9 @@ import {
   rationalize as mathRationalize,
   evaluate as mathEvaluate,
 } from "mathjs";
-import { loadTextbookCatalog, resolveTextbookScope, type TextbookScope } from "../../utils/textbookScope";
+import { loadTextbookCatalog, resolveTextbookScope, resolveConversationTextbookScope, TextbookScopeError, type TextbookScope } from "../../utils/textbookScope";
 import { normalizeFilterId, searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
+import { loadTextbookLibrary, matchTextbookLibrary } from "../../utils/textbookLibrary";
 import type { RagCitation } from "../../utils/ragContext";
 import { openAiEmbedder, searchFigures } from "../../utils/figureSearch";
 import apiDocs from "~~/server/utils/backendApiDocs";
@@ -288,6 +289,8 @@ export type StudentToolsOptions = {
   ragFilters?: TextbookSearchFilters;
   /** Selected lesson names or IDs take precedence over model arguments. */
   textbookScope?: TextbookScope;
+  /** User turns only; retain explicit class/subject through follow-ups. */
+  textbookUserMessages?: readonly string[];
   /** Called with the book/chapter citations of every successful search. */
   onCitations?: (citations: RagCitation[]) => void;
 };
@@ -691,9 +694,39 @@ export function createStudentTools(
     },
   }),
 
+  getAvailableTextbooks: tool({
+    description: "List actual uploaded textbook titles and their class/subject from the AI library. Use for 'what do you have?', available books/classes, or to check whether a book exists after an empty passage search. This lists books; use searchTextbooks for curriculum facts. Retains the user's current subject/class.",
+    inputSchema: z.object({
+      subject: z.string().optional(),
+      level: z.string().optional(),
+    }),
+    execute: async (input) => {
+      try {
+        const [catalog, documents] = await Promise.all([
+          loadTextbookCatalog(apiDocs.baseURL, authToken), loadTextbookLibrary(),
+        ]);
+        const selected = resolveConversationTextbookScope(options.textbookUserMessages || [], options.textbookScope || {}, catalog);
+        const scope = { subject: selected.subject || input.subject, level: selected.level || input.level };
+        if (scope.subject && scope.level) resolveTextbookScope({}, scope, catalog);
+        const books = matchTextbookLibrary(documents, scope, catalog);
+        return {
+          found: books.length > 0, total: books.length, books, scope,
+          instruction: "List only these registered books and their actual class levels. This metadata is not curriculum evidence: use searchTextbooks before explaining a topic. An empty passage search does not mean a listed book is missing. Do not silently use another class.",
+        };
+      } catch (error) {
+        const needsClarification = error instanceof TextbookScopeError;
+        return {
+          found: false, needsClarification, searchError: !needsClarification, books: [],
+          message: needsClarification ? error.message : "The textbook library is temporarily unavailable.",
+          instruction: "No library availability was established. Ask for clarification only if needsClarification is true; otherwise explain a temporary service problem. Do not claim books are missing.",
+        };
+      }
+    },
+  }),
+
   getSubjects: tool({
     description:
-      "Get the current list of available subjects from the API. Use this when you need to know which subjects exist or to validate a subject name.",
+      "Get the academic subject catalogue. This does not show which textbooks are uploaded or which class levels have searchable content. Use getAvailableTextbooks for library availability.",
     inputSchema: z.object({
       includeLevels: z
         .boolean()
@@ -751,7 +784,7 @@ export function createStudentTools(
           total: subjectList.length,
           subjects: subjectList,
           instruction:
-            "Use this list to reference valid subjects. If the user's subject is not listed, ask them to choose from the available subjects.",
+            "This is the academic catalogue, not the uploaded book library. Do not claim that every subject has textbooks for every class. Use getAvailableTextbooks to check actual uploaded books, and searchTextbooks to answer curriculum questions.",
         };
       } catch (error: any) {
         return {
@@ -1061,12 +1094,14 @@ export async function resolveTextbookSearchScope(
   input: TextbookScope,
   selected: TextbookScope,
   authToken?: string,
+  userMessages: readonly string[] = [],
 ) {
   const catalog = await loadTextbookCatalog(apiDocs.baseURL, authToken);
-  const filters = resolveTextbookScope(input, selected, catalog);
+  const conversationScope = resolveConversationTextbookScope(userMessages, selected, catalog);
+  const filters = resolveTextbookScope(input, conversationScope, catalog);
   // Insights silently drops non-ID filters, so reject them before retrieval.
   if (!normalizeFilterId(filters.subject) || !normalizeFilterId(filters.classLevel)) {
-    throw new Error("Please select a valid subject and class level.");
+    throw new TextbookScopeError("invalid_subject", "Please select a valid subject and class level.");
   }
   return filters;
 }
@@ -1089,7 +1124,8 @@ WHEN NOT TO USE THIS TOOL:
 
 RESULTS:
 - found: true → teach from "context" and mention the book title.
-- found: false → the textbooks have nothing on this topic.
+- needsClarification: true → subject/class could not be resolved; no search was made. This does NOT mean content is missing.
+- found: false without needsClarification or searchError → no passages matched this query in the requested class/subject. This does not prove the whole book or subject is absent.
 - searchError: true → the search itself failed; this says NOTHING about whether the topic is in the textbooks.`,
     inputSchema: z.object({
       query: z
@@ -1111,13 +1147,19 @@ RESULTS:
 
       let filters: { classLevel: string; subject: string };
       try {
-        filters = await resolveTextbookSearchScope({ subject, level }, selectedScope, authToken);
+        filters = await resolveTextbookSearchScope({ subject, level }, selectedScope, authToken, options.textbookUserMessages);
       } catch (error: any) {
+        const needsClarification = error instanceof TextbookScopeError;
         return {
           found: false,
+          needsClarification,
+          searchError: !needsClarification,
+          errorCode: needsClarification ? error.code : "catalog_unavailable",
           context: "",
-          message: error.message,
-          instruction: "Ask the student to clarify the subject/class if needed, or retry if the catalog is unavailable. Do not answer from other levels or general knowledge.",
+          message: needsClarification ? error.message : "The subject/class catalogue is temporarily unavailable.",
+          instruction: needsClarification
+            ? "No textbook search was performed. Ask only for the missing or ambiguous subject/class. Do NOT say that the book or topic is unavailable. Keep the subject/class already stated by the student; do not silently use another class."
+            : "The subject/class catalogue could not be loaded. Explain a temporary search problem, not missing textbook content, and do not ask the student to repeat a class they already supplied.",
         };
       }
 

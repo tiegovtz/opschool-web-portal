@@ -1,7 +1,6 @@
 import type { Activity } from "~/types/activity-types";
 import type { ServerQuestionType } from "~/types/activity-props";
-import apiDocs from "~/utilities/apiDocs";
-import { resolveUploadUrl } from "~/utilities/resolveUploadUrl";
+import { resolveMediaUrl } from "~/utilities/parsers/mediaUrl";
 
 type NullableString = string | null;
 
@@ -112,21 +111,7 @@ const toExternalAssetUrl = (value: unknown): NullableString => {
   const normalizedValue = toNullableString(value);
   if (!normalizedValue) return null;
 
-  if (
-    normalizedValue.startsWith("http://") ||
-    normalizedValue.startsWith("https://") ||
-    normalizedValue.startsWith("//") ||
-    normalizedValue.startsWith("data:") ||
-    normalizedValue.startsWith("blob:")
-  ) {
-    return normalizedValue;
-  }
-
-  // new URL(value, base) requires base to itself be an absolute URL, but
-  // apiDocs.baseURL is now a gateway-relative path ("/api/v1") rather than
-  // an absolute host, so it throws here unconditionally. Use the same
-  // root-relative concatenation the rest of the app resolves uploads with.
-  return resolveUploadUrl(normalizedValue, apiDocs.baseURL) || normalizedValue;
+  return resolveMediaUrl(normalizedValue);
 };
 
 const normalizeDescription = (

@@ -1,21 +1,22 @@
 import { activityPopupId, experimrntUrl } from "../controlls";
-import { resolveUploadUrl } from "../resolveUploadUrl";
+import { resolveMediaUrl } from "./mediaUrl";
+import { escapeHtmlAttribute, type MediaUrlOptions } from '../mediaUrls';
 
-const experimentParser = (query: string, uploadsBaseUrl: string = ""): string => {
+const experimentParser = (query: string, options: MediaUrlOptions = {}): string => {
     // Regular expression to match expPackage and associated <img>
     const regex = /expPackage="([^"]+)",&lt;img src="([^"]+)" alt="([^"]+)"&gt;/g;
 
     return query.replace(regex, (match, expSrc, imgSrc, altText) => {
-        const resolvedExpSrc = resolveUploadUrl(expSrc, uploadsBaseUrl);
-        const resolvedImgSrc = resolveUploadUrl(imgSrc, uploadsBaseUrl);
+        const experimentUrl = resolveMediaUrl(expSrc, options);
+        const openAction = escapeHtmlAttribute(`openActivity(${JSON.stringify(experimentUrl)})`);
         return `<div
               id="experimentPackage"
               class="w-full rounded-md overflow-hidden cursor-pointer md:min-h-[400px]"
-              src="${resolvedExpSrc}"
-              alt="${altText}"
-              onclick="openActivity('${resolvedExpSrc}')"
+              src="${escapeHtmlAttribute(experimentUrl)}"
+              alt="${escapeHtmlAttribute(altText)}"
+              onclick="${openAction}"
               >
-              <img class="w-full h-full object-center object-cover" src="${resolvedImgSrc}" alt="${altText}" />
+              <img class="w-full h-full object-center object-cover" src="${escapeHtmlAttribute(resolveMediaUrl(imgSrc, options))}" alt="${escapeHtmlAttribute(altText)}" />
             </div>`;
     });
 }

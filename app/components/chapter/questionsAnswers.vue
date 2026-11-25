@@ -3,6 +3,7 @@ import { reactive, ref, computed, watch } from "vue";
 import { ANSWER_SEPARATOR, type Question } from "~/types/question.interface";
 import { parseOrderedQuestionBlocks } from "~/utilities/orderedQuestionBlocks";
 import QuizMathText from "./QuizMathText.vue";
+import CardImage from '~/components/home/CardImage.vue';
 
 
 // Define State
@@ -618,7 +619,7 @@ const playDemoAnimation = async () => {
         v-if="thumbnail"
         class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]"
       >
-        <NuxtImg
+        <CardImage
           :src="thumbnail"
           alt="thumbnail"
           class="object-contain w-full h-full"
