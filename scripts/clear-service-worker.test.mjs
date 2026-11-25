@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import vm from 'node:vm';
-import { clearDevServiceWorker } from './clear-dev-service-worker.mjs';
+import { clearServiceWorker } from './clear-service-worker.mjs';
 import { loadNuxt } from 'nuxt';
 
 // Run the serialized head script without the application or any imported code:
 // stale cached modules must not prevent recovery.
-const run = globals => vm.runInNewContext(`(${clearDevServiceWorker.toString()})()`, { URL, ...globals });
+const run = globals => vm.runInNewContext(`(${clearServiceWorker.toString()})()`, { URL, ...globals });
 
-test('a controlled dev page unregisters the PWA and clears its caches before reloading', async () => {
+test('a controlled page unregisters the PWA and clears its caches before reloading', async () => {
   const events = [];
   const scope = 'http://localhost:3010/';
   const registration = {
@@ -28,7 +28,7 @@ test('a controlled dev page unregisters the PWA and clears its caches before rel
   assert.deepEqual(events, ['unregister', 'opschool-static-resources', 'opschool-pages', `workbox-precache-v2-${scope}`, 'reload']);
 });
 
-test('a fresh dev page and an unrelated service worker need no cleanup', async () => {
+test('a fresh page and an unrelated service worker need no cleanup', async () => {
   await run({ navigator: {} });
   await run({ navigator: { serviceWorker: { getRegistration: async () => undefined } } });
   await run({ navigator: { serviceWorker: {
@@ -50,7 +50,7 @@ test('cache storage failure still detaches the old controller by reloading', asy
   assert.equal(reloaded, true);
 });
 
-test('Nuxt enables browser recovery only in development and preserves production caching', async () => {
+test('Nuxt disables PWA and enables browser recovery in development and production', async () => {
   for (const dev of [true, false]) {
     const app = await loadNuxt({
       cwd: new URL('..', import.meta.url).pathname,
@@ -58,8 +58,12 @@ test('Nuxt enables browser recovery only in development and preserves production
       overrides: { dev }, ready: false,
     });
     try {
-      const recovery = app.options.app.head.script.find(script => script.key === 'clear-dev-service-worker');
-      assert.equal(Boolean(recovery), dev);
+      const recovery = app.options.app.head.script.find(script => script.key === 'clear-service-worker');
+      assert.ok(recovery?.innerHTML.includes(clearServiceWorker.toString()));
+      assert.equal(app.options.pwa.disable, true);
+      assert.equal(app.options.pwa.manifest, false);
+      assert.equal(app.options.pwa.client.registerPlugin, false);
+      assert.equal(app.options.routeRules['/sw.js'].headers['cache-control'], 'no-store');
       assert.equal(app.options.routeRules['/_nuxt/**'].headers['cache-control'],
         dev ? 'no-store' : 'public, max-age=31536000, immutable');
     } finally {

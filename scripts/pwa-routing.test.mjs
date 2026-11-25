@@ -1,41 +1,59 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import vm from 'node:vm';
-import { loadNuxt } from 'nuxt';
 
-test('serialized service worker routes protect media and APIs at root and /portal/', async () => {
-  const app = await loadNuxt({
-    cwd: new URL('..', import.meta.url).pathname,
-    envName: 'production', overrides: { dev: false }, ready: false,
+const retirementWorker = await readFile(new URL('../public/sw.js', import.meta.url), 'utf8');
+
+async function retire(base, cacheError = false) {
+  const handlers = {};
+  const events = [];
+  const scope = `https://opschool.tie.go.tz${base}`;
+  vm.runInNewContext(retirementWorker, {
+    self: {
+      addEventListener: (name, handler) => { handlers[name] = handler; },
+      skipWaiting: async () => { events.push('skipWaiting'); },
+      registration: {
+        scope,
+        unregister: async () => { events.push('unregister'); return true; },
+      },
+      clients: {
+        matchAll: async options => {
+          assert.equal(options.type, 'window');
+          // ServiceWorkerGlobalScope returns only this worker's controlled clients.
+          assert.equal(options.includeUncontrolled, undefined);
+          return [{ url: `${scope}secondary/topic`, navigate: async url => { events.push(url); } }];
+        },
+      },
+    },
+    caches: {
+      keys: async () => {
+        if (cacheError) throw new Error('Cache storage unavailable');
+        return ['opschool-static-resources', 'opschool-pages', `workbox-precache-v2-${scope}`,
+          'another-app', 'workbox-precache-v2-https://opschool.tie.go.tz/another-app/'];
+      },
+      delete: async name => { events.push(name); return true; },
+    },
   });
-  try {
-    for (const base of ['/', '/portal/']) {
-      const location = new URL(`https://opschool.tie.go.tz${base}sw.js`);
-      // Workbox serializes these callbacks; they cannot rely on module closures.
-      const routes = app.options.pwa.workbox.runtimeCaching.map(route => ({
-        ...route,
-        match: vm.runInNewContext(`(${route.urlPattern.toString()})`, { URL, location }),
-      }));
-      const routeFor = (path, { destination = '', range = false, mode = 'cors' } = {}) => {
-        const url = new URL(path, location);
-        const request = { method: 'GET', destination, mode, headers: new Headers(range ? { Range: 'bytes=100-199' } : {}) };
-        return routes.find(route => route.match({ url, request }));
-      };
-      assert.equal(routeFor(`${base}api/video/123`).handler, 'NetworkOnly');
-      assert.equal(routeFor(`${base}api/video/123`, { destination: 'video' }).handler, 'NetworkOnly');
-      assert.equal(routeFor(`${base}api/video/123`, { range: true }).handler, 'NetworkOnly');
-      assert.equal(routeFor(`${base}uploads/song.mp3`, { destination: 'audio' }).handler, 'NetworkOnly');
-      assert.equal(routeFor('https://media.example/movie.mp4', { destination: 'video' }).handler, 'NetworkOnly');
-      assert.equal(routeFor(`${base}api/library/123`, { range: true }).handler, 'NetworkOnly');
-      for (const path of ['backend/v1/videos', 'auth/profile', 'profile', 'chat/1', 'progress/1', 'recommendations', 'conversation/engage']) {
-        assert.equal(routeFor(`${base}api/${path}`).handler, 'NetworkOnly', `${base}api/${path}`);
-      }
-      assert.equal(routeFor(`${base}api/library/book`).options.cacheName, 'opschool-adt-publications');
-      assert.equal(routeFor(`${base}api/adt/catalogue`).options.cacheName, 'opschool-adt-catalogue');
-      assert.equal(routeFor(`${base}images/cover.webp`, { destination: 'image' }).handler, 'StaleWhileRevalidate');
-      assert.equal(routeFor(`${base}secondary`, { mode: 'navigate' }).handler, 'NetworkFirst');
-    }
-  } finally {
-    await app.close();
+  let pending;
+  const event = { waitUntil: promise => { pending = promise; } };
+  handlers.install(event);
+  await pending;
+  handlers.activate(event);
+  if (cacheError) await assert.rejects(pending, /Cache storage unavailable/);
+  else await pending;
+  return { scope, events };
+}
+
+test('the retirement worker clears old PWA caches at root and /portal/ without touching other apps', async () => {
+  for (const base of ['/', '/portal/']) {
+    const { scope, events } = await retire(base);
+    assert.deepEqual(events, ['skipWaiting', 'unregister', 'opschool-static-resources',
+      'opschool-pages', `workbox-precache-v2-${scope}`, `${scope}secondary/topic`]);
   }
+});
+
+test('the retirement worker reloads its clients even when cache storage fails', async () => {
+  const { scope, events } = await retire('/portal/', true);
+  assert.deepEqual(events, ['skipWaiting', 'unregister', `${scope}secondary/topic`]);
 });

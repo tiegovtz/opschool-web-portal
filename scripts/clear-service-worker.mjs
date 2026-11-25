@@ -1,6 +1,6 @@
-// This function is serialized into the dev page's head so it can recover the
+// This function is serialized into every page's head so it can recover the
 // browser even when a stale PWA cache prevents the Nuxt entry module loading.
-export async function clearDevServiceWorker() {
+export async function clearServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
 
   const registration = await navigator.serviceWorker.getRegistration();

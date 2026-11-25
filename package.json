@@ -11,7 +11,7 @@
     "test:conversation": "node --test scripts/conversation-practice.test.mjs scripts/conversation-api.test.mjs",
     "test:auth-session": "node --experimental-strip-types --test scripts/auth-session.test.mjs",
     "test:images": "node --test scripts/images.test.mjs scripts/card-image.test.mjs",
-    "test:pwa": "node --test scripts/pwa-routing.test.mjs scripts/clear-dev-service-worker.test.mjs",
+    "test:pwa": "node --test scripts/pwa-routing.test.mjs scripts/clear-service-worker.test.mjs",
     "test:rag-context": "node --experimental-strip-types --test scripts/rag-context.test.mjs",
     "test:textbooks": "node --experimental-strip-types --test scripts/textbook-scope.test.mjs scripts/textbook-search.test.mjs scripts/textbook-context.test.mjs",
     "test:adt": "node --experimental-strip-types --test scripts/adt.test.mjs",

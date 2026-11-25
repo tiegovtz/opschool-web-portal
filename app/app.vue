@@ -47,7 +47,6 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <VitePwaManifest />
   <NuxtLayout>
     <NuxtLoadingIndicator color="#56ade8" errorColor="#f00" />
     <div class="contents" @contextmenu.prevent>
