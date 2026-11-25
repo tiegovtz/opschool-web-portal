@@ -83,6 +83,11 @@ test('retrieval query: curriculum questions yes, greetings and math no, follow-u
   assert.equal(isLikelyCurriculumQuestion('Usanisinuru ni nini?'), true);
   assert.equal(isLikelyCurriculumQuestion('hello'), false);
   assert.equal(isLikelyCurriculumQuestion('asante sana'), false);
+  assert.equal(isLikelyCurriculumQuestion('ok what do you have?'), false);
+  assert.equal(isLikelyCurriculumQuestion('Which books are available for Form 3?'), false);
+  assert.equal(isLikelyCurriculumQuestion('Una vitabu gani?'), false);
+  assert.equal(isLikelyCurriculumQuestion('Which classes of vertebrates exist?'), true);
+  assert.equal(isLikelyCurriculumQuestion('What do you have to say about osmosis?'), true);
   assert.equal(isLikelyCurriculumQuestion('plot y = x^2'), false);
   assert.equal(isLikelyCurriculumQuestion('solve 2x + 3 = 7'), false);
   const user = (text) => ({ role: 'user', parts: [{ type: 'text', text }] });

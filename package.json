@@ -9,6 +9,7 @@
   "scripts": {
     "test:images": "node --test scripts/images.test.mjs",
     "test:rag-context": "node --experimental-strip-types --test scripts/rag-context.test.mjs",
+    "test:textbooks": "node --experimental-strip-types --test scripts/textbook-scope.test.mjs scripts/textbook-search.test.mjs scripts/textbook-context.test.mjs",
     "test:adt": "node --experimental-strip-types --test scripts/adt.test.mjs",
     "test:adt:api": "node --experimental-strip-types --test scripts/adt-api.test.mjs",
     "test:backend-proxy": "node --experimental-strip-types --test scripts/backend-proxy.test.mjs",
