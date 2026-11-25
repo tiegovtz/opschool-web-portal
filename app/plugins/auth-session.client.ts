@@ -1,5 +1,6 @@
 import { useAuthStore } from '~/stores/auth';
 import { useNavigationStore } from '~/stores/navigationStore';
+import { getHubPath, normalizeEducationLevel, resolveEducationLevelFromRoute } from '~/utilities/educationRoute';
 import {
   AUTH_COOKIE_NAMES,
   SESSION_END_KEY,
@@ -16,6 +17,7 @@ export default defineNuxtPlugin({
     const router = useRouter();
     const authStore = useAuthStore();
     const navigationStore = useNavigationStore();
+    const hubEducationLevel = useHubEducationLevel();
     const accessToken = useCookie<string | null>('signInAccessToken');
     const refreshToken = useCookie<string | null>('signInRefreshToken');
     const user = useCookie('signInUserToken');
@@ -52,7 +54,8 @@ export default defineNuxtPlugin({
       },
       redirect(reason) {
         const current = router.currentRoute.value;
-        let destination = '/';
+        const hub = getHubPath(resolveEducationLevelFromRoute(current, normalizeEducationLevel(hubEducationLevel.value)));
+        let destination = router.resolve(hub).href;
         if (reason === 'expired') {
           const query = new URLSearchParams({ reason: 'session-expired' });
           // Never preserve a token supplied in a URL after the session has ended.
