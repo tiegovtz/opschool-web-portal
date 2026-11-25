@@ -447,7 +447,7 @@ onBeforeUnmount(() => {
             <!-- TIE Library Books -->
             <a
               aria-label="Visit TIE online library"
-              href="https://ol.tie.go.tz/index.php"
+              href="https://ol.tie.go.tz/"
               target="_blank"
               rel="noopener noreferrer"
               :class="[desktopNavItemClass, desktopInactiveNavItemClass]"
