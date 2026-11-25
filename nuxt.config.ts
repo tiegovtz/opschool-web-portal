@@ -196,13 +196,24 @@ export default defineNuxtConfig({
       navigateFallback: undefined,
       runtimeCaching: [
         {
-          urlPattern: ({ url }: { url: URL }) => url.origin === location.origin
-            && /^\/api\/(?:backend|auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
+          // Streaming responses may be partial (206). Keep byte ranges and
+          // authenticated media out of all caches, including the GET fallback.
+          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.headers.has("range")
+            || ["audio", "video"].includes(request.destination)
+            || (url.origin === location.origin && url.pathname.startsWith(new URL("api/video/", location.href).pathname)),
+          handler: "NetworkOnly",
+        },
+        {
+          urlPattern: ({ url }: { url: URL }) => {
+            const apiPrefix = new URL("api/", location.href).pathname;
+            return url.origin === location.origin && url.pathname.startsWith(apiPrefix)
+              && /^(?:backend|auth|profile|chat|progress|recommendations|conversation)(?:\/|$)/.test(url.pathname.slice(apiPrefix.length));
+          },
           handler: "NetworkOnly",
         },
         {
           urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
-            && url.origin === location.origin && url.pathname.startsWith("/api/library/"),
+            && url.origin === location.origin && url.pathname.startsWith(new URL("api/library/", location.href).pathname),
           handler: "CacheFirst",
           options: {
             cacheName: "opschool-adt-publications",
@@ -212,7 +223,7 @@ export default defineNuxtConfig({
         },
         {
           urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
-            && url.origin === location.origin && url.pathname.startsWith("/api/adt/"),
+            && url.origin === location.origin && url.pathname.startsWith(new URL("api/adt/", location.href).pathname),
           handler: "NetworkFirst",
           options: {
             cacheName: "opschool-adt-catalogue",
@@ -242,7 +253,7 @@ export default defineNuxtConfig({
           },
         },
         {
-          urlPattern: ({ request }: { request: Request }) => ["image", "audio", "video"].includes(request.destination),
+          urlPattern: ({ request }: { request: Request }) => request.destination === "image",
           handler: "StaleWhileRevalidate",
           options: {
             cacheName: "opschool-media",
@@ -339,9 +350,6 @@ export default defineNuxtConfig({
         { name: "apple-mobile-web-app-capable", content: "yes" },
         { name: "apple-mobile-web-app-status-bar-style", content: "default" },
         { name: "apple-mobile-web-app-title", content: "OpSchool" },
-      ],
-      link: [
-        { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       ],
     },
   },

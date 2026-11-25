@@ -30,6 +30,7 @@ import {
 } from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
+const appBaseURL = useRuntimeConfig().app.baseURL;
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
@@ -1364,7 +1365,7 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div class="mx-auto notes md:px-4 w-full max-w-7xl flex-1" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content))))))">
+              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))), appBaseURL))">
             </div>
 
             <p id="notes-extra-details" class="sr-only">

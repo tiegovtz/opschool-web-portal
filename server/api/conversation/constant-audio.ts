@@ -1,3 +1,6 @@
+import { backendProxyBaseUrl } from '../../../shared/backend/proxy'
+import { readSessionToken } from '../../utils/sessionAuth'
+
 const normalizeQueryValue = (value: unknown) => {
   if (Array.isArray(value)) return String(value[0] || '').trim()
   return String(value || '').trim()
@@ -41,20 +44,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const baseUrl = String(process.env.VITE_API_BASE_URL || '').trim()
-  if (!baseUrl) {
-    throw createError({
-      statusCode: 500,
-      message: 'VITE_API_BASE_URL is not configured',
-    })
-  }
+  const baseUrl = backendProxyBaseUrl(
+    process.env.NUXT_BACKEND_API_BASE_URL,
+    process.env.VITE_API_BASE_URL,
+    useRuntimeConfig(event).backendApiBaseUrl,
+  )
   const base = baseUrl.replace(/\/$/, '')
   const urls = [
     `${base}/conversations/constant/${encodeURIComponent(chapterId)}`,
     `${base}/conversation/constant/${encodeURIComponent(chapterId)}`,
   ]
 
-  const authToken = getCookie(event, 'signInAccessToken') || ''
+  const authToken = readSessionToken(event) || ''
   const headers: Record<string, string> = { Accept: '*/*' }
   if (authToken) {
     headers.Authorization = `Bearer ${authToken}`

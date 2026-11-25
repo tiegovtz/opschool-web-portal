@@ -24,7 +24,9 @@ Install the public half of `DEPLOY_SSH_KEY` in the deployment account's `authori
 
 Install Node.js 22.12+ (or 20.19+), pnpm, and PM2 for the deployment account. The checkout used by PM2 must be on `develop` with no tracked changes. Run deployment as the account that owns the existing PM2 process; a separate account's PM2 daemon cannot restart it. The deployment script verifies the process name, working directory, script path, and port before changing the checkout. It preserves PM2's existing launch configuration and environment. PM2 does not need an ecosystem file to run a directly started script.
 
-For backend card images, set `NUXT_PUBLIC_IMAGE_FETCH_ORIGIN` to an HTTP(S) origin that the PM2 host can reach if it cannot fetch the public uploads address directly. Do not use the former Docker-only `http://gateway` hostname. This value must be present during the Nuxt build so IPX permits that image host.
+Card images optimize their public URL first. Set `NUXT_PUBLIC_IMAGE_FETCH_ORIGIN` to an HTTP(S) origin that the PM2 host can reach as a fallback if it cannot fetch the public uploads address directly. Do not use the former Docker-only `http://gateway` hostname. This value must be present during the Nuxt build so IPX permits that image host. Verify that the origin serves the same uploads path with its own Host header: `http://127.0.0.1/api/uploads/...` can hit nginx's default virtual host instead of the portal. Leave the override empty when public uploads work from the PM2 host.
+
+The service worker sends audio, video, and all byte-range requests to the network without caching. Its API rules resolve paths relative to the service worker so they also apply under `/portal/`. After deploying, reload once the updated service worker activates. To diagnose a browser still using the previous worker, unregister it in browser developer tools and reload.
 
 To observe optimization on the server:
 

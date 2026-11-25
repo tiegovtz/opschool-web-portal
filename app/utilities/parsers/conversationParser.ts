@@ -1,4 +1,6 @@
-const conversationParser = (query: string): string => {
+const escapeAttribute = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+const conversationParser = (query: string, baseURL = '/'): string => {
   const regex = /conversation="([^"]+)",chapterId="([^"]+)"((?:,[a-zA-Z]+="[^"]*")*)/g;
 
   return query.replace(regex, (match, identifier, chapterId, rawAttributes) => {
@@ -23,14 +25,15 @@ const conversationParser = (query: string): string => {
         ? 'English Practice'
         : 'Conversation Practice';
 
+    const openAction = `openConversationPractice(${[safeChapterId, safeIdentifier, safeType, safeLanguage, baseURL].map(value => JSON.stringify(value)).join(',')})`;
     return `<button
         type="button"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-oceanBlue text-white hover:bg-deepBlue transition-colors"
-        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}','${safeType}','${safeLanguage}')"
-        data-conversation-identifier="${safeIdentifier}"
-        data-conversation-chapter="${safeChapterId}"
-        data-conversation-type="${safeType}"
-        data-conversation-language="${safeLanguage}"
+        onclick="${escapeAttribute(openAction)}"
+        data-conversation-identifier="${escapeAttribute(safeIdentifier)}"
+        data-conversation-chapter="${escapeAttribute(safeChapterId)}"
+        data-conversation-type="${escapeAttribute(safeType)}"
+        data-conversation-language="${escapeAttribute(safeLanguage)}"
         aria-label="Open ${buttonLabel.toLowerCase()}"
       >
         ${buttonLabel}
@@ -44,7 +47,8 @@ declare global {
       chapterId: string,
       identifier: string,
       type?: string,
-      language?: string
+      language?: string,
+      baseURL?: string
     ) => void;
     closeConversationPractice?: () => void;
     closeEnglishPractice?: () => void;
@@ -119,12 +123,13 @@ if (typeof window !== 'undefined') {
     chapterId: string,
     identifier: string,
     type?: string,
-    language?: string
+    language?: string,
+    baseURL = '/'
   ) => {
     const normalizedType = String(type || '').trim().toLowerCase();
     const normalizedLanguage = String(language || '').trim().toLowerCase();
-    const baseRoute =
-      normalizedType === 'constant' ? '/english-practice' : '/conversation-practice';
+    const page = normalizedType === 'constant' ? 'english-practice' : 'conversation-practice';
+    const appBaseURL = String(baseURL || '/').replace(/\/+$/, '') + '/';
     const params = new URLSearchParams();
     if (chapterId) params.set('chapterId', chapterId);
     if (identifier) params.set('identifier', identifier);
@@ -133,7 +138,7 @@ if (typeof window !== 'undefined') {
     params.set('type', typeToUse);
     if (normalizedLanguage) params.set('language', normalizedLanguage);
     params.set('embed', '1');
-    const url = `${baseRoute}?${params.toString()}`;
+    const url = `${appBaseURL}${page}?${params.toString()}`;
 
     let overlay = overlayRef || (document.getElementById(overlayId) as HTMLDivElement | null);
     let iframe = iframeRef || (document.getElementById(iframeId) as HTMLIFrameElement | null);
@@ -167,6 +172,7 @@ if (typeof window !== 'undefined') {
       iframe.id = iframeId;
       iframe.src = url;
       iframe.title = 'Conversation practice';
+      iframe.allow = 'microphone; autoplay';
       iframe.style.cssText =
         'width:100%;height:100%;min-height:0;flex:1 1 auto;border:none;display:block;background:#fff;';
 

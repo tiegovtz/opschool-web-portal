@@ -1,4 +1,5 @@
-const DEFAULT_BASE_URL = 'https://apitie.ekima.africa/v1'
+import { backendProxyBaseUrl } from '../../../shared/backend/proxy'
+import { readSessionToken } from '../../utils/sessionAuth'
 
 const normalizeQueryValue = (value: unknown) => {
   if (Array.isArray(value)) return String(value[0] || '').trim()
@@ -107,12 +108,16 @@ export default defineEventHandler(async (event) => {
   const type = normalizeQueryValue(query?.type)
   if (!chapterId) {
     throw createError({
-      statusCode: 500,
-      message: 'CONVERSATION_CHAPTER_ID is not set',
+      statusCode: 400,
+      message: 'chapterId is required',
     })
   }
 
-  const baseUrl = process.env.VITE_API_BASE_URL || DEFAULT_BASE_URL
+  const baseUrl = backendProxyBaseUrl(
+    process.env.NUXT_BACKEND_API_BASE_URL,
+    process.env.VITE_API_BASE_URL,
+    useRuntimeConfig(event).backendApiBaseUrl,
+  )
   const base = baseUrl.replace(/\/$/, '')
   
   // Build URLs based on type - backend might expect type in the path
@@ -128,7 +133,7 @@ export default defineEventHandler(async (event) => {
   ]
 
   const authToken =
-    getCookie(event, 'signInAccessToken') ||
+    readSessionToken(event) ||
     process.env.CONVERSATION_AUTH_TOKEN ||
     process.env.CONVERSATION_ENGAGE_TOKEN ||
     ''

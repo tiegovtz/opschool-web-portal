@@ -238,6 +238,7 @@ const currentWordIndex = ref(0); // Track current position in script words
 const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user detection
 const route = useRoute();
 const router = useRouter();
+const conversationApiBase = `${useRuntimeConfig().app.baseURL}api/conversation`;
 const authAccessTokenCookie = useCookie('signInAccessToken');
 const authHeaders = computed<Record<string, string>>(() => {
   const token = authAccessTokenCookie.value;
@@ -821,7 +822,7 @@ const getPiperAudioForText = async (
     voiceType,
     textLength: text.length,
   });
-  const response = await $fetch('/api/conversation/tts', {
+  const response = await $fetch(`${conversationApiBase}/tts`, {
     method: 'POST',
     headers: authHeaders.value,
     body: {
@@ -1466,11 +1467,11 @@ const loadConversationScript = async () => {
       query.identifier = identifier;
     }
     const [response, constantAudio] = await Promise.all([
-      $fetch<ConversationResponse>('/api/conversation/engage', {
+      $fetch<ConversationResponse>(`${conversationApiBase}/engage`, {
         query,
         headers: authHeaders.value,
       }),
-      $fetch<ConstantAudioResponse>('/api/conversation/constant-audio', {
+      $fetch<ConstantAudioResponse>(`${conversationApiBase}/constant-audio`, {
         query: {
           chapterId,
           identifier,
@@ -1564,7 +1565,7 @@ const loadConversationScript = async () => {
           : line.speaker === aiSpeakerId.value) && !nextLineAudioMap[line.id]
     );
     if (typeof window !== 'undefined' && aiLinesMissingAudio.length) {
-      const batchResponse = await $fetch<TtsBatchResponse>('/api/conversation/tts-batch', {
+      const batchResponse = await $fetch<TtsBatchResponse>(`${conversationApiBase}/tts-batch`, {
         method: 'POST',
         headers: authHeaders.value,
         body: {

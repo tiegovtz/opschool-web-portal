@@ -21,6 +21,26 @@ test('production backend proxy contract', async t => {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
     requests.push({ url: req.url, method: req.method, headers: req.headers, body: Buffer.concat(chunks) });
+    if (/^\/api\/v1\/conversations\/(engage|constant)\/test-chapter$/.test(req.url)) {
+      const type = req.url.includes('/constant/') ? 'constant' : 'engage';
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify([
+        { text: 'Second', order: 2, identifier: 'test-dialogue', type, audioFile: '/uploads/second.wav' },
+        { text: 'First', order: 1, identifier: 'test-dialogue', type, audioFile: '/uploads/first.wav' },
+      ]));
+    }
+    if (req.url === '/api/v1/video-stream/test-video') {
+      const video = Buffer.from('video-stream-range-test');
+      const range = /^bytes=(\d+)-(\d+)$/.exec(req.headers.range || '');
+      const start = range ? Number(range[1]) : 0;
+      const end = range ? Number(range[2]) : video.length - 1;
+      res.writeHead(range ? 206 : 200, {
+        'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes',
+        'Content-Length': end - start + 1,
+        ...(range ? { 'Content-Range': `bytes ${start}-${end}/${video.length}` } : {}),
+      });
+      return res.end(video.subarray(start, end + 1));
+    }
     if (req.url === '/api/v1/unavailable') return req.socket.destroy();
     if (req.url === '/api/v1/redirect') {
       res.writeHead(302, { Location: '/outside-the-api' });
@@ -139,5 +159,40 @@ test('production backend proxy contract', async t => {
     assert.deepEqual(await response.json(), { ok: true });
     assert.equal(requests.at(-1).url, '/api/v1/topics');
     assert.equal(requests.at(-1).headers.authorization, 'Bearer test-token');
+  });
+
+  await t.test('video streaming preserves complete and partial bytes and requires a session', async () => {
+    const count = requests.length;
+    assert.equal((await fetch(`${base}/api/video/test-video`)).status, 401);
+    assert.equal(requests.length, count);
+    for (const range of [undefined, 'bytes=0-0', 'bytes=6-11']) {
+      const response = await fetch(`${base}/api/video/test-video`, {
+        headers: { Cookie: 'signInAccessToken=test-token', ...(range ? { Range: range } : {}) },
+      });
+      assert.equal(response.status, range ? 206 : 200);
+      assert.equal(response.headers.get('content-type'), 'video/mp4');
+      assert.equal(response.headers.get('accept-ranges'), 'bytes');
+      const expected = range === 'bytes=0-0' ? 'v' : range ? 'stream' : 'video-stream-range-test';
+      assert.equal(response.headers.get('content-length'), String(expected.length));
+      assert.equal(response.headers.get('content-range'), range === 'bytes=0-0' ? 'bytes 0-0/23' : range ? 'bytes 6-11/23' : null);
+      assert.equal(await response.text(), expected);
+      assert.equal(requests.at(-1).headers.range, range);
+      assert.equal(requests.at(-1).headers.authorization, 'Bearer test-token');
+    }
+  });
+
+  await t.test('conversation routes share the runtime backend and accept cookie or Bearer sessions', async () => {
+    for (const [endpoint, type, headers] of [
+      ['engage', 'engage', { Cookie: 'signInAccessToken=test-token' }],
+      ['constant-audio', 'constant', { Authorization: 'Bearer test-token' }],
+    ]) {
+      const response = await fetch(`${base}/api/conversation/${endpoint}?chapterId=test-chapter&identifier=test-dialogue`, { headers });
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.deepEqual(endpoint === 'engage' ? data.pieces : data.items.map(item => item.text), ['First', 'Second']);
+      assert.equal(requests.at(-1).url, `/api/v1/conversations/${type}/test-chapter`);
+      assert.equal(requests.at(-1).headers.authorization, 'Bearer test-token');
+      assert.equal((await fetch(`${base}/api/conversation/${endpoint}`, { headers })).status, 400);
+    }
   });
 });
