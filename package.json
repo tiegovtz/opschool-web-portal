@@ -2,11 +2,12 @@
   "name": "tie-web-portal",
   "private": true,
   "type": "module",
-  "version": "1.2.2",
+  "version": "1.2.13",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
+    "test:auth-session": "node --experimental-strip-types --test scripts/auth-session.test.mjs",
     "test:images": "node --test scripts/images.test.mjs",
     "test:rag-context": "node --experimental-strip-types --test scripts/rag-context.test.mjs",
     "test:textbooks": "node --experimental-strip-types --test scripts/textbook-scope.test.mjs scripts/textbook-search.test.mjs scripts/textbook-context.test.mjs",
@@ -19,7 +20,7 @@
     "generate": "nuxt generate",
     "typecheck": "vue-tsc --noEmit",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare && node scripts/patch-nuxt-vite-builder.mjs",
+    "postinstall": "node scripts/patch-nuxt-mathjax.mjs && nuxt prepare && node scripts/patch-nuxt-vite-builder.mjs",
     "migrate-figures-to-api": "npx tsx scripts/migrate-figures-to-api.ts",
     "test:rag": "npx tsx scripts/test-rag.ts"
   },
@@ -72,6 +73,7 @@
     "mathjax": "^3.2.2",
     "mathjs": "^15.2.0",
     "nuxt": "^4.6.3",
+    "nuxt-mathjax": "1.1.1",
     "openai": "^4.0.0",
     "page-flip": "^2.0.7",
     "pdf-parse": "^2.4.5",

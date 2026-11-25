@@ -30,12 +30,20 @@ const handleImageError = () => {
   }
 };
 const optimizedSource = computed(() => {
-  // Use a configured server-reachable origin for backend uploads when needed.
+  // The stored src is a public, browser-facing URL (whatever domain/IP the
+  // deployment currently answers on). The image optimizer runs *inside* this
+  // same Node server, which usually cannot dial back out to its own public
+  // address (hairpin NAT), so swap the origin for a server-reachable one
+  // when this is an absolute URL, keeping the rest of the URL untouched.
   const origin = String(config.public.imageFetchOrigin || "").trim().replace(/\/+$/, "");
-  const publicUploads = "http://41.59.251.166/api/uploads/";
-  return origin && source.value.startsWith(publicUploads)
-    ? `${origin}/api/uploads/${source.value.slice(publicUploads.length)}`
-    : source.value;
+  if (!origin) return source.value;
+  try {
+    const parsed = new URL(source.value);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return source.value;
+    return `${origin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return source.value;
+  }
 });
 const optimizable = computed(() => {
   if (/\.(?:gif|svg)(?:[?#]|$)/i.test(optimizedSource.value)) return false;

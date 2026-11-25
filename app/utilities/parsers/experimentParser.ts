@@ -1,18 +1,20 @@
 import { activityPopupId, experimrntUrl } from "../controlls";
+import { resolveMediaUrl } from "./mediaUrl";
 
 const experimentParser = (query: string): string => {
     // Regular expression to match expPackage and associated <img>
     const regex = /expPackage="([^"]+)",&lt;img src="([^"]+)" alt="([^"]+)"&gt;/g;
 
     return query.replace(regex, (match, expSrc, imgSrc, altText) => {
+        const experimentUrl = resolveMediaUrl(expSrc);
         return `<div
-              id="experimentPackage"  
+              id="experimentPackage"
               class="w-full rounded-md overflow-hidden cursor-pointer md:min-h-[400px]"
-              src="${expSrc}"
+              src="${experimentUrl}"
               alt="${altText}"
-              onclick="openActivity('${expSrc}')"
+              onclick="openActivity('${experimentUrl}')"
               >
-              <img class="w-full h-full object-center object-cover" src="${imgSrc}" alt="${altText}" />
+              <img class="w-full h-full object-center object-cover" src="${resolveMediaUrl(imgSrc)}" alt="${altText}" />
             </div>`;
     });
 }

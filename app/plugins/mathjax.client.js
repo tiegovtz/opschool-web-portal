@@ -1,66 +1,36 @@
-// plugins/mathjax.client.js
-export default defineNuxtPlugin(() => {
+import { prepareUndelimitedMath } from "~/utilities/parsers/mathJaxText";
 
-  if (import.meta.server) return;
-
-  // Configure MathJax
-  // Supported delimiters:
-  // - Inline math: $...$ or \(...\)
-  // - Display math: $$...$$ or \[...\]
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true, // Allow \$ to escape dollar signs
-      processEnvironments: true, // Process LaTeX environments
-      packages: { '[+]': ['mhchem'] } // Include chemistry package
-    },
-    options: {
-      skipHtmlTags: ['script', 'noscript', 'style',],
-      renderActions: {
-        // addChemistry: [10, (doc) => {}],
-        find_mathjax: [10, (doc) => {}],
-      }
-    },
-    loader: {
-      load: ['[tex]/mhchem']  // Load mhchem extension
-    },
-    startup: {
-      ready: () => {
-        MathJax.startup.defaultReady();
-        /**
-         * When `elements` is passed, only typeset within those nodes (fast).
-         * The previous implementation ignored the argument and always re-typeset the
-         * whole document, which blocked the UI on every mathjax directive update.
-         */
-        window.MathJaxRender = (elements) => {
-          const MJ = window.MathJax;
-          if (!MJ?.typesetPromise) return Promise.resolve();
-          const els =
-            Array.isArray(elements) && elements.length > 0 ? elements : null;
-          const run = async () => {
-            if (els && typeof MJ.typesetClear === "function") {
-              MJ.typesetClear(els);
-            }
-            if (els) {
-              await MJ.typesetPromise(els);
-            } else {
-              await MJ.typesetPromise();
-            }
-          };
-          return run();
-        };
-      }
-    }
-  };
-
-  // Load MathJax script from CDN (you can switch to local if confirmed compatible)
+// nuxt-mathjax owns the single MathJax script and its global configuration.
+// This bridge keeps the existing directive and dynamically loaded notes using
+// the same renderer after the module's script has finished initializing.
+export default defineNuxtPlugin((nuxtApp) => {
   window.mathJaxLoaded = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js?config=tex-mhchem';
-    script.async = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
+    const connect = (script) => {
+      script.addEventListener("load", async () => {
+        try {
+          await window.MathJax?.startup?.promise;
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      }, { once: true });
+      script.addEventListener("error", reject, { once: true });
+    };
+
+    nuxtApp.hook("app:mounted", () => {
+      const script = document.querySelector('script[src*="mathjax@3/es5/"]');
+      if (script) connect(script);
+      else reject(new Error("nuxt-mathjax did not load its script"));
+    });
   });
-}) 
+
+  window.MathJaxRender = async (elements) => {
+    await window.mathJaxLoaded;
+    const mathJax = window.MathJax;
+    if (!mathJax?.typesetPromise) return;
+    const targets = Array.isArray(elements) && elements.length ? elements : undefined;
+    for (const target of targets ?? [document.body]) prepareUndelimitedMath(target);
+    if (targets) mathJax.typesetClear?.(targets);
+    await mathJax.typesetPromise(targets);
+  };
+});

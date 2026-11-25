@@ -1,4 +1,4 @@
-// import apiDocs from "../api-docs";
+import { resolveMediaUrl } from "./mediaUrl";
 const parseHTML = (html: string): Document => {
   return new DOMParser().parseFromString(html, "text/html");
 };
@@ -60,6 +60,7 @@ const audioParser = (html: string): string => {
       src = source?.getAttribute("src") ?? null;
     }
     if (!src) return;
+    src = resolveMediaUrl(src);
     const wrapper = doc.createElement("div");
     wrapper.className = "audio-canvas-wrapper inline-block";
     wrapper.innerHTML = `
@@ -87,10 +88,20 @@ const audioParser = (html: string): string => {
   return doc.body.innerHTML;
 };
 
-// combime both media parsers
+// Bare <img> tags; model and experiment composites stay escaped until their parsers run.
+const imageParser = (html: string): string => {
+  const doc = parseHTML(html);
+  doc.querySelectorAll("img[src]").forEach((image) => {
+    image.setAttribute("src", resolveMediaUrl(image.getAttribute("src")!));
+  });
+  return doc.body.innerHTML;
+};
+
+// Combine the media parsers.
 const mediaParser = (html: string): string => {
   let parsedHTML = videoParser(html);
   parsedHTML = audioParser(parsedHTML);
+  parsedHTML = imageParser(parsedHTML);
   return parsedHTML;
 };
-export { videoParser, audioParser, mediaParser };
+export { videoParser, audioParser, imageParser, mediaParser };

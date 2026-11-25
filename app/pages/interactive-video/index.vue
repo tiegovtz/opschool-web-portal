@@ -99,7 +99,7 @@ const fetchVideo = async () => {
     }
 
     // Sign in again when the access token is expiring.
-    if (isTokenExpiringSoon(signInAccessToken.value, 60)) {
+    if (isTokenExpiringSoon(signInAccessToken.value, 0)) {
       await navigateTo({
         path: '/auth',
         query: { redirect: authRedirectTarget.value },

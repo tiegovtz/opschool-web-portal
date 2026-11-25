@@ -1,10 +1,44 @@
-const upstreamBaseURL =
-  import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
+// Feedback and support endpoints share the API's v1 root, even when a
+// deployment config supplies only the origin or the /api prefix.
+export function feedbackSupportBaseURL(value: string) {
+  const base = value.trim().replace(/\/+$/, '');
+  return base && !base.endsWith('/v1') ? `${base}/v1` : base;
+}
+export const feedbackSupportPaths = {
+  feedback: '/feedback',
+  tickets: '/support/tickets',
+  ticket: (id: string) => `/support/tickets/${encodeURIComponent(id)}`,
+  messages: (id: string) => `/support/tickets/${encodeURIComponent(id)}/messages`,
+};
+export function feedbackSupportApiURLs(value: string) {
+  const base = feedbackSupportBaseURL(value);
+  return {
+    feedback: { submit: `${base}${feedbackSupportPaths.feedback}` },
+    support: {
+      tickets: `${base}${feedbackSupportPaths.tickets}`,
+      ticket: (id: string) => `${base}${feedbackSupportPaths.ticket(id)}`,
+      messages: (id: string) => `${base}${feedbackSupportPaths.messages(id)}`,
+    },
+  };
+}
 
-export const createApiDocs = (baseURL: string, assetBaseURL = baseURL) => ({
+// Falls back to a gateway-relative path (not an absolute host) so
+// environments that leave VITE_API_BASE_URL unset still resolve assets
+// (profile pictures, etc.) against their own gateway instead of a
+// hardcoded, potentially unreachable host.
+const upstreamBaseURL =
+  import.meta.env?.VITE_API_BASE_URL || "/api/v1";
+
+export const createApiDocs = (apiBaseURL: string, assetBaseURL = apiBaseURL) => {
+  // SSR calls the upstream directly, where a trailing slash would create
+  // paths such as /api/v1//topics/:id that need not match backend routes.
+  const baseURL = apiBaseURL.trim().replace(/\/+$/, '');
+  return {
   // Keep existing asset URL builders pointed at the upstream media server.
   baseURL: assetBaseURL,
   requestBaseURL: baseURL,
+
+  ...feedbackSupportApiURLs(baseURL),
 
   // AUTH API
   auth: {
@@ -210,7 +244,8 @@ export const createApiDocs = (baseURL: string, assetBaseURL = baseURL) => ({
     streamingLinks: `${baseURL}/live-classrooms/streaming-links`,
     session: `${baseURL}/live-classrooms/sessions`,
   },
-});
+  };
+};
 
 const apiDocs = createApiDocs(import.meta.client ? "/api/backend/v1" : upstreamBaseURL, upstreamBaseURL);
 export default apiDocs;

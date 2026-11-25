@@ -1,6 +1,39 @@
+// Uploaded notes sometimes contain one extra closing TeX brace. Remove only
+// braces that have no matching opener inside a delimited expression; MathJax
+// otherwise replaces the entire expression with an error message.
+export function repairUnmatchedMathBraces(html: string): string {
+  const repair = (expression: string): string => {
+    let depth = 0;
+    let result = "";
+    for (let index = 0; index < expression.length; index += 1) {
+      const character = expression[index];
+      if (character === "\\" && index + 1 < expression.length) {
+        result += character + expression[++index];
+      } else if (character === "{") {
+        depth += 1;
+        result += character;
+      } else if (character === "}") {
+        if (depth > 0) {
+          depth -= 1;
+          result += character;
+        }
+      } else {
+        result += character;
+      }
+    }
+    return result;
+  };
+
+  return html
+    .replace(/(\\\()([\s\S]*?)(\\\))/g, (_match, open, math, close) => open + repair(math) + close)
+    .replace(/(\\\[)([\s\S]*?)(\\\])/g, (_match, open, math, close) => open + repair(math) + close)
+    .replace(/(\$\$)([\s\S]*?)(\$\$)/g, (_match, open, math, close) => open + repair(math) + close)
+    .replace(/(?<!\\)(\$)([^$]*?)(\$)/g, (_match, open, math, close) => open + repair(math) + close);
+}
+
 export function enhanceAccessibility(htmlString: string): string {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, "text/html");
+  const doc = parser.parseFromString(repairUnmatchedMathBraces(htmlString), "text/html");
 
   // Elements you want to make focusable
   const makeFocusable = [

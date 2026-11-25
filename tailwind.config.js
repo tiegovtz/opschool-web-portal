@@ -215,6 +215,18 @@ const config: Config = {
     require("tailwind-scrollbar"),
     require("@tailwindcss/typography"),
     require("tailwindcss-animate"),
+    ({ addBase, theme }) => {
+      const thumbColor = theme("colors.oceanBlue");
+
+      addBase({
+        "*": {
+          scrollbarColor: `${thumbColor} transparent !important`,
+        },
+        "*::-webkit-scrollbar-thumb": {
+          backgroundColor: `${thumbColor} !important`,
+        },
+      });
+    },
   ],
 };
 

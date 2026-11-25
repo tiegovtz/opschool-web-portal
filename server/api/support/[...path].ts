@@ -1,7 +1,8 @@
+import { feedbackSupportPaths } from '../../../app/utilities/apiDocs';
 import { inboxBackendBase, inboxBackendRequest } from '../../utils/inboxBackend';
 import { ownedSupportTickets, filterOwnedSupportTickets } from '../../utils/ownedSupportTickets';
 import { protectSubmission, submissionActor } from '../../utils/inboxSubmission';
-import { localInboxEnabled, authenticateDemoUser, createEntry, readInbox, listTickets, updateEntry } from '../../utils/localInboxStore';
+import { localInboxEnabled, authenticateDemoUser, createEntry, readInbox, updateEntry } from '../../utils/localInboxStore';
 import { createSupportSchema, supportReplySchema, supportListSchema, supportTicketSchema, supportQuerySchema } from '../../../shared/support/contracts';
 
 export default defineEventHandler(async event => {
@@ -31,7 +32,7 @@ export default defineEventHandler(async event => {
   if (localInboxEnabled()) {
     const actor = publicCreate ? await submissionActor(event) : await authenticateDemoUser(accessToken!, String(useRuntimeConfig(event).backendApiBaseUrl));
     if (!actor) throw createError({ statusCode: 401, statusMessage: 'Please sign in again.' });
-    if (method === 'GET' && !id && query.success) return supportListSchema.parse(listTickets((await readInbox()).filter(item => item.userId === actor.id), { ...query.data, userId: actor.id }));
+    if (method === 'GET' && !id && query.success) return supportListSchema.parse(filterOwnedSupportTickets((await readInbox()).filter(item => item.userId === actor.id && item.category !== 'feedback').map(item => supportTicketSchema.parse(item)), query.data));
     const entry = id ? (await readInbox()).find(item => item.id === id && item.userId === actor.id && item.category !== 'feedback') : undefined;
     if (id && !entry) throw createError({ statusCode: 404, statusMessage: 'Request not found.' });
     const result = method === 'GET' ? entry : id ? await updateEntry(id, actor, { message: (body as { body: string }).body }) : await createEntry({ ...actor, educationLevel: undefined }, body as Parameters<typeof createEntry>[1]);
@@ -40,11 +41,11 @@ export default defineEventHandler(async event => {
   }
   try {
     if (method === 'GET' && !id && query.success) {
-      const items = await ownedSupportTickets(page => inboxBackendRequest(event, `/support/tickets?page=${page}&limit=50`));
+      const items = await ownedSupportTickets(page => inboxBackendRequest(event, `${feedbackSupportPaths.tickets}?page=${page}&limit=50`));
       return supportListSchema.parse(filterOwnedSupportTickets(items, query.data));
     }
-    const suffix = id ? `/${encodeURIComponent(id)}${action ? '/messages' : ''}` : '';
-    const response = await inboxBackendRequest(event, `/support/tickets${suffix}`, method, body);
+    const endpoint = id ? action ? feedbackSupportPaths.messages(id) : feedbackSupportPaths.ticket(id) : feedbackSupportPaths.tickets;
+    const response = await inboxBackendRequest(event, endpoint, method, body);
     const parsed = supportTicketSchema.safeParse(response);
     if (!parsed.success) throw createError({ statusCode: 502, statusMessage: 'The support service returned an unexpected response.' });
     if (method === 'POST') setResponseStatus(event, id ? 200 : 201);

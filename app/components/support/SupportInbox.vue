@@ -3,11 +3,14 @@ import type { LanguageSupport } from '~/types/language.interface';
 import type { SupportCategory, SupportTicket } from '../../../shared/support/contracts';
 import DropDown from '~/components/customDropDown/dropDownList.vue';
 import Input from '~/components/ui/inputs/input.vue';
+import StatusBadge from './StatusBadge.vue';
+import { supportStatusTone } from '~/utilities/supportPresentation';
+import { copyResponseText } from '~/utilities/clipboard';
 
-const fieldClass = 'mt-2 block w-full rounded-lg border border-textGray/40 bg-gray-50 px-3 py-3 text-sm font-normal text-textGray transition-colors [font-family:inherit] focus:outline-none focus:ring-2 focus:ring-oceanBlue/50 focus:border-deepBlue';
-const labelClass = 'block text-xs font-medium text-textGray';
-const primaryClass = 'inline-flex min-h-10 items-center justify-center rounded-md bg-oceanBlue px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-deepBlue [font-family:inherit]';
-const secondaryClass = 'min-h-10 rounded-md border border-textGray/40 bg-white px-3 py-2 text-sm font-normal text-textGray transition-colors hover:bg-gray-50 [font-family:inherit]';
+const fieldClass = 'mt-2 block w-full rounded-lg border border-textGray/40 bg-gray-50 px-3 py-3 text-base font-normal text-darkBlue transition-colors [font-family:inherit] focus:outline-none focus:ring-2 focus:ring-oceanBlue/50 focus:border-deepBlue';
+const labelClass = 'block text-base font-medium text-darkBlue';
+const primaryClass = 'inline-flex min-h-11 items-center justify-center rounded-md bg-deepBlue px-4 py-2 text-base font-medium text-white transition-colors hover:bg-primary-dark [font-family:inherit]';
+const secondaryClass = 'min-h-11 rounded-md border border-textGray/40 bg-white px-3 py-2 text-base font-normal text-darkBlue transition-colors hover:bg-gray-50 [font-family:inherit]';
 
 
 const props = defineProps<{ language: LanguageSupport; educationLevel: 'primary' | 'secondary'; view: string }>();
@@ -15,10 +18,10 @@ const sw = computed(() => props.language === 'kiswahili');
 const text = computed(() => sw.value ? {
   title: 'Msaada na changamoto', description: 'Chagua msaada wa kiufundi kuripoti tatizo au pendekeza kipengele kipya. Fuatilia majibu hapa.',
   technical: 'Msaada wa kiufundi', feature: 'Pendekeza kipengele', support: 'Maombi ya msaada',
-  newRequest: 'Tuma ombi jipya', createTicket: 'Fungua tiketi ya msaada', suggestFeature: 'Pendekeza kipengele kipya', technicalHint: 'Pata msaada kuhusu matatizo ya kutumia jukwaa.', featureHint: 'Tuambie kipengele kipya unachotaka kuona.', issue: 'Eleza tatizo', featureDetails: 'Eleza pendekezo lako', featurePlaceholder: 'Eleza kipengele unachopendekeza na jinsi kitakavyokusaidia.', requests: 'Maombi yangu', search: 'Tafuta maombi yako…', all: 'Hali zote',
-  new: 'Jipya', in_review: 'Linashughulikiwa', resolved: 'Limetatuliwa', category: 'Aina ya ombi', level: 'Ngazi ya elimu inayohusika',
-  chooseLevel: 'Chagua ngazi ya elimu', primary: 'Msingi', secondary: 'Sekondari', subject: 'Kichwa cha ombi', message: 'Ujumbe',
-  subjectHint: 'Eleza ombi lako kwa kifupi', messageHint: 'Eleza kilichotokea, hatua ulizofuata na msaada unaohitaji.',
+  newRequest: 'Tuma ombi jipya', createTicket: 'Fungua tiketi ya msaada', suggestFeature: 'Pendekeza kipengele kipya', technicalHint: 'Eleza changamoto unayokumbana nayo wakati wa kutumia jukwaa. Inashauriwa kuambatisha picha za skrini zinazoonyesha changamoto hiyo kwa ufafanuzi zaidi.', featureHint: 'Tuambie kipengele kipya unachotaka kuona.', issue: 'Eleza tatizo', featureDetails: 'Eleza pendekezo lako', featurePlaceholder: 'Eleza kipengele unachopendekeza na jinsi kitakavyokusaidia.', requests: 'Maombi yangu', search: 'Tafuta maombi yako…', all: 'Hali zote',
+  new: 'Limetumwa', in_review: 'Linashughulikiwa', resolved: 'Limetatuliwa', category: 'Aina ya ombi', level: 'Ngazi ya elimu inayohusika',
+  chooseLevel: 'Chagua ngazi ya elimu', primary: 'Msingi', secondary: 'Sekondari', subject: 'Changamoto', message: 'Ujumbe',
+  subjectHint: 'Eleza changamoto yako kwa kifupi', messageHint: 'Eleza kilichotokea, hatua ulizofuata na msaada unaohitaji.',
   cancel: 'Ghairi', submit: 'Tuma ombi', sending: 'Inatuma…', reply: 'Jibu lako', sendReply: 'Tuma jibu',
   empty: 'Hakuna maombi bado', emptyHint: 'Tuma ombi ili kuwasiliana na timu ya msaada.', noMatch: 'Hakuna maombi yanayolingana.',
   select: 'Chagua ombi ili kusoma mazungumzo.', loading: 'Inapakia…', team: 'Timu ya msaada', you: 'Wewe',
@@ -28,12 +31,12 @@ const text = computed(() => sw.value ? {
   failed: 'Imeshindikana kuwasiliana na huduma ya msaada. Jaribu tena.',
   retryLogin: 'Ingia tena ili kuendelea',
 } : {
-  title: 'Support & Issues', description: 'Get help with a problem using the platform.',
+  title: 'Support & Issues', description: 'Describe the challenge you are facing while using the platform. Screenshot attachments of the challenge are advised for better clarity.',
   technical: 'Technical Support', feature: 'Feature Request', support: 'Support Requests',
-  newRequest: 'New request', createTicket: 'Create support ticket', suggestFeature: 'Suggest a feature', technicalHint: 'Get help with a problem using the platform.', featureHint: 'Tell us what new functionality you would like.', issue: 'Describe the issue', featureDetails: 'Describe your suggestion', featurePlaceholder: 'Explain the feature you would like and how it would help you.', requests: 'My requests', search: 'Search your requests…', all: 'All statuses',
-  new: 'New', in_review: 'In review', resolved: 'Resolved', category: 'Request category', level: 'Education level this concerns',
-  chooseLevel: 'Choose an education level', primary: 'Primary', secondary: 'Secondary', subject: 'Subject', message: 'Message',
-  subjectHint: 'Summarize what you need help with', messageHint: 'Describe what happened, the steps you took, and what you need help with.',
+  newRequest: 'New request', createTicket: 'Create support ticket', suggestFeature: 'Suggest a feature', technicalHint: 'Describe the challenge you are facing while using the platform. Screenshot attachments of the challenge are advised for better clarity.', featureHint: 'Tell us what new functionality you would like.', issue: 'Describe the issue', featureDetails: 'Describe your suggestion', featurePlaceholder: 'Explain the feature you would like and how it would help you.', requests: 'My requests', search: 'Search your requests…', all: 'All statuses',
+  new: 'Submitted', in_review: 'In review', resolved: 'Resolved', category: 'Request category', level: 'Education level this concerns',
+  chooseLevel: 'Choose an education level', primary: 'Primary', secondary: 'Secondary', subject: 'Challenge', message: 'Message',
+  subjectHint: 'Summarize the challenge you are facing', messageHint: 'Describe what happened, the steps you took, and what you need help with.',
   cancel: 'Cancel', submit: 'Submit request', sending: 'Sending…', reply: 'Your reply', sendReply: 'Send reply',
   empty: 'No requests yet', emptyHint: 'Create a request to start a conversation with the support team.', noMatch: 'No matching requests.',
   select: 'Select a request to read the conversation.', loading: 'Loading…', team: 'Support team', you: 'You',
@@ -74,10 +77,34 @@ const requestCounts = ref({ submitted: 0, pending: 0, solved: 0 });
 async function loadCounts() {
   const statuses = ['new','in_review','resolved'];
   const totals = await Promise.all(statuses.map(status => $fetch<{ total: number }>('/api/support/tickets', { query: { status, limit: 1 } })));
-  requestCounts.value = { submitted: totals.reduce((sum,item) => sum + item.total, 0), pending: totals[0]!.total + totals[1]!.total, solved: totals[2]!.total };
+  requestCounts.value = { submitted: totals[0]!.total, pending: totals[1]!.total, solved: totals[2]!.total };
 }
 const draft = reactive({ category: 'technical' as SupportCategory, educationLevel: '', subject: '', body: '' });
 const reply = ref('');
+const threadHeading = ref<HTMLElement | null>(null);
+const threadScroller = ref<HTMLElement | null>(null);
+const replyInput = ref<HTMLTextAreaElement | null>(null);
+watch(selected, () => nextTick(resizeReply));
+const copyNotice = ref('');
+const summaryCards = computed(() => [
+  { key: 'submitted' as const, status: 'new' as const, label: sw.value ? 'Yaliyotumwa' : 'Submitted' },
+  { key: 'pending' as const, status: 'in_review' as const, label: sw.value ? 'Yanashughulikiwa' : 'In review' },
+  { key: 'solved' as const, status: 'resolved' as const, label: sw.value ? 'Yaliyotatuliwa' : 'Solved' },
+]);
+function resizeReply() {
+  const field = replyInput.value;
+  if (field) { field.style.height = 'auto'; field.style.height = `${Math.min(field.scrollHeight, 160)}px`; }
+}
+watch(reply, () => nextTick(resizeReply));
+async function copyTicketNumber() {
+  if (!selected.value) return;
+  try { await copyResponseText(selected.value.id); copyNotice.value = sw.value ? 'Namba ya tiketi imenakiliwa.' : 'Ticket number copied.'; }
+  catch { copyNotice.value = sw.value ? 'Imeshindikana kunakili. Chagua namba na uinakili.' : 'Unable to copy. Select the ticket number to copy it.'; }
+}
+function replyShortcut(event: KeyboardEvent) {
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); if (!busy.value && !authRequired.value) void sendReply(); }
+}
+
 const route = useRoute();
 const signInLink = computed(() => ({ path: '/auth', query: { redirect: route.fullPath } }));
 let controller: AbortController | undefined;
@@ -105,7 +132,7 @@ async function load() {
 }
 async function openTicket(ticket: SupportTicket) {
   busy.value = true; error.value = ''; notice.value = ''; reply.value = ''; selected.value = null; createOpen.value = false;
-  try { const data = await $fetch<SupportTicket>(`/api/support/tickets/${encodeURIComponent(ticket.id)}`); if (active) selected.value = data; }
+  try { const data = await $fetch<SupportTicket>(`/api/support/tickets/${encodeURIComponent(ticket.id)}`); if (active) { selected.value = data; copyNotice.value = ''; await nextTick(); threadHeading.value?.focus({ preventScroll: true }); threadScroller.value?.scrollTo({ top: 0 }); } }
   catch (value) { showError(value); } finally { if (active) busy.value = false; }
 }
 async function submit() {
@@ -118,11 +145,11 @@ async function submit() {
   } catch (value) { showError(value); } finally { if (active) busy.value = false; }
 }
 async function sendReply() {
-  if (!selected.value || !reply.value.trim()) return; busy.value = true; error.value = ''; notice.value = '';
+  if (!selected.value || selected.value.status === 'resolved' || busy.value || authRequired.value || !reply.value.trim()) return; busy.value = true; error.value = ''; notice.value = '';
   try {
     const ticket = await $fetch<SupportTicket>(`/api/support/tickets/${encodeURIComponent(selected.value.id)}/messages`, { method: 'POST', body: { body: reply.value.trim() } });
     if (!active) return;
-    selected.value = ticket; reply.value = ''; notice.value = text.value.replied; await load();
+    selected.value = ticket; reply.value = ''; notice.value = text.value.replied; await load(); await nextTick(); threadScroller.value?.scrollTo({ top: threadScroller.value.scrollHeight });
   } catch (value) { showError(value); } finally { if (active) busy.value = false; }
 }
 const date = (value: string) => new Date(value).toLocaleString(sw.value ? 'sw-TZ' : 'en-GB', { timeZone: 'Africa/Dar_es_Salaam', dateStyle: 'medium', timeStyle: 'short' });
@@ -134,46 +161,70 @@ onBeforeUnmount(() => { active = false; controller?.abort(); clearTimeout(search
 </script>
 
 <template>
-  <section v-show="view !== 'feedback'" :aria-label="view === 'requests' ? text.requests : text.technical" class="space-y-5 text-sm font-normal text-textGray [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-50 [&_button:focus-visible]:outline-none [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-oceanBlue [&_button:focus-visible]:ring-offset-2">
+  <section v-show="view !== 'feedback'" :id="view === 'requests' ? 'requests-panel' : 'support-panel'" role="tabpanel" :aria-labelledby="view === 'requests' ? 'requests-tab' : 'support-tab'" :aria-label="view === 'requests' ? text.requests : text.technical" :class="view === 'requests' ? 'lg:flex lg:h-full lg:min-h-[32rem] lg:flex-col lg:gap-3' : 'space-y-5'" class="text-base font-normal text-darkBlue [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-50 [&_button:focus-visible]:outline-none [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-oceanBlue [&_button:focus-visible]:ring-offset-2">
 
-    <div v-show="view === 'support'" id="support-panel" role="tabpanel" aria-labelledby="support-tab" class="space-y-4">
+    <div v-show="view === 'support'" class="space-y-4">
+      <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-base leading-relaxed text-darkBlue">
+        <p>{{ sw ? 'Una changamoto ya kuingia kwenye akaunti? Wasiliana nasi moja kwa moja kwa msaada.' : 'Having trouble signing in? Contact us directly for help.' }}</p>
+        <a href="tel:+255735041168" class="mt-2 inline-flex min-h-11 items-center rounded-md font-semibold text-deepBlue underline underline-offset-4 hover:text-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-deepBlue">+255-735-041168</a>
+      </div>
       <p>{{ text.technicalHint }}</p>
     </div>
-    <div v-if="error" role="alert" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{{ error }} <NuxtLink v-if="authRequired" :to="signInLink" class="ml-2 underline">{{ text.retryLogin }}</NuxtLink><button v-else type="button" class="ml-3 underline" :disabled="busy || loading" @click="load">{{ text.refresh }}</button></div>
-    <p v-if="notice" role="status" class="rounded-lg bg-green-50 p-3 text-sm text-green-800">{{ notice }}</p>
-    <form v-show="view === 'support'" class="rounded-2xl border border-slate-200 bg-white p-5 md:p-7" @submit.prevent="submit">
+    <div v-if="error" role="alert" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-base text-amber-900">{{ error }} <NuxtLink v-if="authRequired" :to="signInLink" class="ml-2 underline">{{ text.retryLogin }}</NuxtLink><button v-else type="button" class="ml-3 underline" :disabled="busy || loading" @click="load">{{ text.refresh }}</button></div>
+    <p v-if="notice" role="status" class="rounded-lg bg-green-50 p-3 text-base text-green-800">{{ notice }}</p>
+    <form :aria-busy="busy" v-show="view === 'support'" class="rounded-2xl border border-slate-200 bg-white p-5 md:p-7" @submit.prevent="submit">
       <h3 class="mb-5 text-lg font-semibold text-darkBlue">{{ draft.category === 'technical' ? text.createTicket : text.suggestFeature }}</h3>
       <label :class="[labelClass, 'mt-5']">{{ text.subject }}<input v-model="draft.subject" required maxlength="150" :disabled="busy" :class="fieldClass" :placeholder="text.subjectHint" /></label>
       <label :class="[labelClass, 'mt-5']">{{ draft.category === 'technical' ? text.issue : text.featureDetails }}<textarea v-model="draft.body" required maxlength="5000" rows="6" :disabled="busy" :class="fieldClass" :placeholder="draft.category === 'technical' ? text.messageHint : text.featurePlaceholder" /></label>
-      <fieldset class="mt-5 grid gap-4 sm:grid-cols-2"><legend class="mb-3 font-medium">{{ sw ? 'Mawasiliano (si lazima)' : 'Contact details (optional)' }}</legend>
-        <label>{{ sw ? 'Jina' : 'Name' }}<Input v-model="contact.name" maxlength="100" :disabled="busy" class="mt-2" autocomplete="name" /></label>
-        <label>{{ sw ? 'Namba ya simu' : 'Phone number' }}<Input v-model="contact.phone" type="tel" maxlength="30" :disabled="busy" class="mt-2" autocomplete="tel" /></label>
-        <label>{{ sw ? 'Barua pepe' : 'Email' }}<Input v-model="contact.email" type="email" maxlength="254" :disabled="busy" class="mt-2" autocomplete="email" /></label>
+      <fieldset aria-describedby="support-contact-help" class="mt-5 grid gap-4 sm:grid-cols-2"><legend class="mb-3 font-medium">{{ sw ? 'Mawasiliano (si lazima)' : 'Contact details (optional)' }}</legend>
+        <label>{{ sw ? 'Jina' : 'Name' }}<Input v-model="contact.name" maxlength="100" :disabled="busy" class="mt-2 text-base text-darkBlue" autocomplete="name" /></label>
+        <label>{{ sw ? 'Namba ya simu' : 'Phone number' }}<Input v-model="contact.phone" type="tel" maxlength="30" :disabled="busy" class="mt-2 text-base text-darkBlue" autocomplete="tel" /></label>
+        <label>{{ sw ? 'Barua pepe' : 'Email' }}<Input v-model="contact.email" type="email" maxlength="254" :disabled="busy" class="mt-2 text-base text-darkBlue" autocomplete="email" /></label>
       </fieldset>
+    <p id="support-contact-help" class="text-sm leading-relaxed text-gray-600">{{ sw ? 'Ikiwa huwezi kuingia kwenye akaunti yako, tunapendekeza uweke namba ya simu au barua pepe ili timu ya msaada iweze kuwasiliana nawe. Mawasiliano si lazima.' : 'If you cannot log in, we recommend entering a phone number or email so the support team can contact you. Contact details are optional.' }}</p>
       <label :class="[labelClass, 'mt-5']">{{ sw ? 'Ambatisha picha za skrini (si lazima)' : 'Attach screenshots (optional)' }}<input type="file" multiple accept="image/png,image/jpeg,image/webp" :disabled="busy" :class="fieldClass" @change="addScreenshots" /></label>
-      <p class="mt-2 text-xs">{{ sw ? 'Hadi picha 3, MB 2 kila moja. Ondoa taarifa za siri kabla ya kutuma.' : 'Up to 3 images, 2 MB each. Remove passwords and private information before sending.' }}</p>
-      <ul class="mt-3 flex flex-wrap gap-3"><li v-for="(file,index) in attachments" :key="index" class="rounded-lg border p-2"><img :src="file.data" :alt="file.name" class="h-24 w-32 object-contain" /><p class="max-w-32 truncate text-xs">{{ file.name }}</p><button type="button" :disabled="busy" class="text-xs underline" @click="attachments.splice(index,1)">{{ sw ? 'Ondoa' : 'Remove' }}</button></li></ul>
+      <p class="mt-2 text-sm">{{ sw ? 'Hadi picha 3, MB 2 kila moja. Ondoa taarifa za siri kabla ya kutuma.' : 'Up to 3 images, 2 MB each. Remove passwords and private information before sending.' }}</p>
+      <ul class="mt-3 flex flex-wrap gap-3"><li v-for="(file,index) in attachments" :key="index" class="rounded-lg border p-2"><img :src="file.data" :alt="file.name" class="h-24 w-32 object-contain" /><p class="max-w-32 truncate text-sm">{{ file.name }}</p><button type="button" :disabled="busy" :aria-label="`${sw ? 'Ondoa' : 'Remove'} ${file.name}`" class="min-h-11 text-sm underline" @click="attachments.splice(index,1)">{{ sw ? 'Ondoa' : 'Remove' }}</button></li></ul>
       <div class="mt-5 flex flex-wrap gap-3"><button type="submit" :disabled="busy || !draft.subject.trim() || !draft.body.trim()" :class="primaryClass">{{ busy ? text.sending : draft.category === 'technical' ? text.createTicket : text.suggestFeature }}</button></div>
     </form>
-    <section v-if="view === 'requests' && accessToken" id="requests-panel" role="tabpanel" aria-labelledby="requests-tab" :aria-label="text.requests" class="space-y-4">
-      <div class="grid grid-cols-3 gap-3"><div v-for="item in [{ key: 'submitted', label: sw ? 'Yaliyotumwa' : 'Submitted' }, { key: 'pending', label: sw ? 'Yanasubiri' : 'Pending' }, { key: 'solved', label: sw ? 'Yaliyotatuliwa' : 'Solved' }]" :key="item.key" class="rounded-xl border border-slate-200 p-4"><p>{{ item.label }}</p><p class="mt-2 text-2xl font-semibold text-darkBlue">{{ requestCounts[item.key as keyof typeof requestCounts] }}</p></div></div>
-      <div class="grid grid-cols-[minmax(0,1fr)_minmax(100px,180px)_auto] items-center gap-2 sm:gap-3"><input v-model="search" :disabled="busy" :aria-label="text.search" :placeholder="text.search" :class="[fieldClass, '!mt-0 h-10 min-w-0']" /><div class="min-w-0"><DropDown v-model="status" :list="[{ id: 'all', name: text.all }, { id: 'new', name: text.new }, { id: 'in_review', name: text.in_review }, { id: 'resolved', name: text.resolved }]" :placeholder="text.all" :disabled="busy" :button-class="secondaryClass + ' h-10 w-full'" @update-model-value="value => status = value === 'all' ? '' : String(value)" /></div><button type="button" :disabled="busy || loading" :class="secondaryClass" @click="load">{{ text.refresh }}</button></div>
-      <div class="grid overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.2fr)]">
-        <section class="min-w-0 border-b border-slate-200 lg:border-b-0 lg:border-r" :aria-label="text.requests">
-          <p v-if="loading" role="status" class="p-6 text-sm text-textGray">{{ text.loading }}</p>
-          <ul v-else-if="items.length" class="divide-y divide-slate-100"><li v-for="ticket in items" :key="ticket.id"><button type="button" :disabled="busy" :class="['w-full p-4 text-left hover:bg-oceanBlue/10', selected?.id === ticket.id ? 'bg-oceanBlue/10' : '']" @click="openTicket(ticket)"><div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-textGray"><span>{{ date(ticket.createdAt) }} EAT</span><span class="rounded-full bg-grayLight px-2 py-1">{{ text[ticket.status] }}</span></div><p class="break-words text-sm font-semibold text-darkBlue">{{ ticket.subject }}</p><p class="mt-1 line-clamp-2 break-words text-xs leading-5 text-textGray">{{ ticket.body }}</p></button></li></ul>
-          <div v-else class="p-8 text-center"><p class="font-semibold">{{ search || status ? text.noMatch : text.empty }}</p><p class="mt-2 text-sm leading-6 text-textGray">{{ text.emptyHint }}</p></div>
-          <div class="flex items-center justify-between gap-2 border-t border-slate-100 p-3 text-xs"><button type="button" :disabled="page <= 1 || busy || loading" :class="secondaryClass" @click="page--">{{ text.previous }}</button><span>{{ page }} / {{ Math.max(1, Math.ceil(total / 10)) }}</span><button type="button" :disabled="page * 10 >= total || busy || loading" :class="secondaryClass" @click="page++">{{ text.next }}</button></div>
+    <section v-if="view === 'requests' && accessToken" :aria-label="text.requests" class="space-y-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:gap-3 lg:space-y-0">
+      <div class="grid shrink-0 grid-cols-3 gap-3">
+        <button v-for="item in summaryCards" :key="item.key" type="button" :aria-pressed="status === item.status" :disabled="busy" :class="[supportStatusTone[item.status], status === item.status ? 'ring-2 ring-current ring-offset-2' : '']" class="min-w-0 rounded-xl border p-3 text-left sm:p-4" @click="status = status === item.status ? '' : item.status"><span class="block text-sm sm:text-base">{{ item.label }}</span><span class="mt-2 block text-2xl font-semibold">{{ requestCounts[item.key] }}</span></button>
+      </div>
+      <div class="grid shrink-0 grid-cols-[minmax(0,1fr)_minmax(110px,180px)_auto] items-center gap-2 sm:gap-3">
+        <div class="relative min-w-0"><Icon name="mdi:magnify" aria-hidden="true" class="pointer-events-none absolute left-3 top-3 h-5 w-5 text-gray-500" /><input v-model="search" :disabled="busy" :aria-label="text.search" :placeholder="text.search" :class="[fieldClass, '!mt-0 h-11 min-w-0 pl-10 pr-10']" /><button v-if="search" type="button" :aria-label="sw ? 'Futa utafutaji' : 'Clear search'" class="absolute right-0 top-0 flex h-11 w-10 items-center justify-center rounded-md" @click="search = ''"><Icon name="mdi:close" aria-hidden="true" /></button></div>
+        <div class="min-w-0"><DropDown :model-value="status || 'all'" :list="[{ id: 'all', name: text.all }, { id: 'new', name: text.new }, { id: 'in_review', name: text.in_review }, { id: 'resolved', name: text.resolved }]" :placeholder="text.all" :disabled="busy" id="request-status-filter" :aria-label="sw ? 'Chuja kwa hali' : 'Filter by status'" option-class="text-base text-darkBlue" :button-class="secondaryClass + ' h-11 w-full'" @update-model-value="value => status = value === 'all' ? '' : String(value)" /></div>
+        <button type="button" :disabled="busy || loading" :aria-busy="loading" :class="[secondaryClass, 'flex items-center gap-2']" @click="load"><Icon name="mdi:refresh" :class="loading ? 'animate-spin' : ''" aria-hidden="true" /><span>{{ text.refresh }}</span></button>
+      </div>
+      <div class="grid min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white lg:min-h-64 lg:flex-1 lg:grid-cols-[minmax(240px,0.8fr)_minmax(0,1.2fr)]">
+        <section class="flex min-h-0 min-w-0 flex-col border-b border-slate-200 lg:border-b-0 lg:border-r" :aria-label="text.requests">
+          <div class="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
+          <p v-if="loading" role="status" class="p-6 text-base text-darkBlue">{{ text.loading }}</p>
+          <ul v-else-if="items.length" class="divide-y divide-slate-100"><li v-for="ticket in items" :key="ticket.id"><button type="button" :disabled="busy" :aria-current="selected?.id === ticket.id ? 'true' : undefined" :class="['w-full p-4 text-left hover:bg-oceanBlue/10', selected?.id === ticket.id ? 'bg-oceanBlue/10' : '']" @click="openTicket(ticket)"><div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm text-darkBlue"><span>{{ date(ticket.createdAt) }} EAT</span><StatusBadge :status="ticket.status" :label="text[ticket.status]" /></div><p class="break-words text-base font-semibold text-darkBlue">{{ ticket.subject }}</p><p class="mt-1 line-clamp-2 break-words text-sm leading-5 text-darkBlue">{{ ticket.body }}</p></button></li></ul>
+          <div v-else class="p-8 text-center"><p class="font-semibold">{{ search || status ? text.noMatch : text.empty }}</p><p class="mt-2 text-base leading-6 text-darkBlue">{{ text.emptyHint }}</p></div>
+          </div>
+          <div v-if="total > 10" class="flex shrink-0 items-center justify-between gap-2 border-t border-slate-100 p-3 text-sm"><button type="button" :disabled="page <= 1 || busy || loading" :class="secondaryClass" @click="page--">{{ text.previous }}</button><span>{{ page }} / {{ Math.max(1, Math.ceil(total / 10)) }}</span><button type="button" :disabled="page * 10 >= total || busy || loading" :class="secondaryClass" @click="page++">{{ text.next }}</button></div>
         </section>
-        <article class="min-w-0 p-5 md:p-6">
+        <article class="flex min-h-0 min-w-0 flex-col" :aria-busy="busy">
           <template v-if="selected">
-            <div class="flex items-center justify-between gap-3"><span class="rounded-full bg-oceanBlue/10 px-3 py-1 text-xs font-semibold text-deepBlue">{{ text[selected.status] }}</span><button type="button" :disabled="busy" :class="secondaryClass" @click="selected = null">{{ text.close }}</button></div>
-            <p class="mt-5 break-all text-xs text-textGray">{{ selected.id }}</p><h3 class="mt-2 break-words text-xl font-semibold text-darkBlue">{{ selected.subject }}</h3><p class="mt-2 text-xs text-textGray">{{ date(selected.createdAt) }} EAT</p><p class="my-6 whitespace-pre-wrap break-words text-sm leading-7">{{ selected.body }}</p>
-            <div v-if="selected.attachments.length" class="mb-5 flex flex-wrap gap-3"><a v-for="file in selected.attachments" :key="file.name" :href="file.data" :download="file.name" class="rounded-lg border p-2"><img v-if="file.data" :src="file.data" :alt="file.name" class="h-28 w-40 object-contain" /><span class="text-xs">{{ file.name }}</span></a></div>
-            <div class="space-y-3"><div v-for="message in selected.messages" :key="message.id" :class="['rounded-xl p-4', message.sender === 'admin' ? 'bg-oceanBlue/10' : 'bg-gray-50']"><p class="mb-2 text-xs font-semibold text-textGray">{{ message.sender === 'admin' ? text.team : text.you }} · {{ date(message.createdAt) }} EAT</p><p class="whitespace-pre-wrap break-words text-sm leading-6">{{ message.body }}</p></div></div>
-            <form class="mt-6 border-t border-slate-100 pt-5" @submit.prevent="sendReply"><label :class="labelClass">{{ text.reply }}<textarea v-model="reply" required maxlength="5000" rows="4" :disabled="busy" :class="fieldClass" /></label><button type="submit" :disabled="busy || !reply.trim() || authRequired" :class="[primaryClass, 'mt-3']">{{ busy ? text.sending : text.sendReply }}</button></form>
+            <div ref="threadScroller" class="p-5 md:p-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
+            <div class="flex items-center justify-between gap-3"><StatusBadge :status="selected.status" :label="text[selected.status]" /><button type="button" :disabled="busy" :class="secondaryClass" @click="selected = null">{{ text.close }}</button></div>
+            <div class="mt-4 flex min-w-0 items-center gap-1 text-sm text-gray-600">
+              <p class="min-w-0">{{ sw ? 'Namba ya Tiketi:' : 'Ticket Number:' }} <span class="font-medium">#{{ selected.id.length > 12 ? selected.id.slice(0, 6) + '…' : selected.id }}</span></p>
+              <span class="group relative inline-flex shrink-0">
+                <button type="button" :aria-label="sw ? 'Nakili namba ya tiketi' : 'Copy ticket number'" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-sky-50 hover:text-deepBlue focus-visible:outline focus-visible:outline-2 focus-visible:outline-deepBlue" @click="copyTicketNumber"><Icon name="mdi:content-copy" class="h-4 w-4" aria-hidden="true" /></button>
+                <span aria-hidden="true" class="pointer-events-none absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 whitespace-nowrap rounded bg-darkBlue px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">{{ sw ? 'Nakili' : 'Copy' }}</span>
+              </span>
+            </div>
+            <p role="status" class="sr-only">{{ copyNotice }}</p>
+            <h3 ref="threadHeading" tabindex="-1" class="mt-2 break-words rounded text-xl font-semibold text-darkBlue focus-visible:outline focus-visible:outline-2 focus-visible:outline-deepBlue">{{ selected.subject }}</h3><p class="mt-2 text-sm text-darkBlue">{{ date(selected.createdAt) }} EAT</p><p class="my-6 whitespace-pre-wrap break-words text-base leading-7">{{ selected.body }}</p>
+            <div v-if="selected.attachments.length" class="mb-5 flex flex-wrap gap-3"><a v-for="file in selected.attachments" :key="file.name" :href="file.data" :download="file.name" class="rounded-lg border p-2"><img v-if="file.data" :src="file.data" :alt="file.name" class="h-28 w-40 object-contain" /><span class="text-sm">{{ file.name }}</span></a></div>
+            <div class="space-y-3"><div v-for="message in selected.messages" :key="message.id" :class="['max-w-[90%] rounded-xl border p-4', message.sender === 'admin' ? 'mr-auto border-sky-100 bg-sky-50' : 'ml-auto border-slate-200 bg-gray-50']"><p class="mb-2 text-sm font-semibold text-darkBlue">{{ message.sender === 'admin' ? text.team : text.you }} · {{ date(message.createdAt) }} EAT</p><p class="whitespace-pre-wrap break-words text-base leading-6">{{ message.body }}</p></div></div>
+            </div>
+            <div v-if="selected.status === 'resolved'" class="shrink-0 border-t border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{{ sw ? 'Ombi hili limetatuliwa. Kwa msaada zaidi, fungua tiketi mpya kupitia kichupo cha Msaada wa kiufundi.' : 'This request is resolved. For more help, create a new ticket in Technical Support.' }}</div>
+            <form v-else novalidate class="shrink-0 border-t border-slate-200 bg-white p-4" @submit.prevent="sendReply"><label :class="labelClass">{{ text.reply }}<textarea ref="replyInput" v-model="reply" maxlength="5000" rows="2" :disabled="busy" :aria-describedby="'reply-shortcut-help'" :class="[fieldClass, 'max-h-40 min-h-20 resize-none overflow-y-auto']" @keydown="replyShortcut" /></label><div class="mt-3 flex flex-wrap items-center justify-between gap-2"><p id="reply-shortcut-help" class="text-sm text-gray-600">{{ sw ? 'Tuma kwa Ctrl/⌘ + Enter.' : 'Send with Ctrl/⌘ + Enter.' }}</p><button type="submit" :disabled="busy || !reply.trim() || authRequired" :class="primaryClass">{{ busy ? text.sending : text.sendReply }}</button></div></form>
           </template>
-          <p v-else class="flex min-h-60 items-center justify-center text-center text-sm text-textGray">{{ busy ? text.loading : text.select }}</p>
+          <p v-else class="flex min-h-32 flex-1 items-center justify-center p-5 text-center text-base text-darkBlue">{{ busy ? text.loading : text.select }}</p>
         </article>
       </div>
     </section>

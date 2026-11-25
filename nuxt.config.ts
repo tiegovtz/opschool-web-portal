@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { vite as vidstack } from "vidstack/plugins";
+import { clearDevServiceWorker } from "./scripts/clear-dev-service-worker.mjs";
 
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
@@ -64,6 +65,15 @@ export default defineNuxtConfig({
     public: {
       localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
       imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
+      // Base origin for relative "uploads/..." paths embedded in chapter
+      // content (models, experiments, inline audio). Derived from the API
+      // base URL so each environment resolves its own uploads correctly,
+      // rather than content being frozen to whichever environment it was
+      // authored/copied from.
+      // Falls back to "/api" (gateway-relative, not an absolute host) so
+      // environments that leave VITE_API_BASE_URL unset still resolve
+      // uploads against their own gateway instead of a hardcoded host.
+      uploadsBaseUrl: (process.env.VITE_API_BASE_URL || "/api/v1").replace(/\/v1\/?$/, ""),
     },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
@@ -85,7 +95,23 @@ export default defineNuxtConfig({
     { src: "~/plugins/init-chapter-progress.client.js", mode: "client" },
   ],
 
-  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
+  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt", "nuxt-mathjax"],
+
+  // nuxt-mathjax types omit valid MathJax loader options and the mhchem package map.
+  MathJax: {
+    component: "tex-mml-chtml",
+    mathjax: {
+      tex: {
+        inlineMath: [["$", "$"], ["\\(", "\\)"]],
+        displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        processEscapes: true,
+        processEnvironments: true,
+        packages: { "[+]": ["mhchem"] },
+      },
+      loader: { load: ["[tex]/mhchem"] },
+      options: { skipHtmlTags: ["script", "noscript", "style"] },
+    },
+  } as any,
 
   // Self-host the fonts (download: true, the module default) instead of a
   // render-blocking @import to fonts.googleapis.com/fonts.gstatic.com.
@@ -104,13 +130,29 @@ export default defineNuxtConfig({
   // "Use efficient cache lifetimes"). _nuxt/** filenames are content-hashed
   // by Vite, so a 1-year immutable cache is safe; unhashed public assets
   // (images, local fonts, pwa icons) get a shorter cache instead.
-  routeRules: {
-    "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
-    "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+  $production: {
+    routeRules: {
+      "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+      "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+    },
+  },
+  $development: {
+    routeRules: {
+      "/_nuxt/**": { headers: { "cache-control": "no-store" } },
+    },
+    app: {
+      head: {
+        script: [{
+          key: "clear-dev-service-worker",
+          tagPriority: "critical",
+          innerHTML: `(${clearDevServiceWorker.toString()})().catch(error => console.warn('[dev] Service worker cleanup failed:', error));`,
+        }],
+      },
+    },
   },
 
   hooks: {
