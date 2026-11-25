@@ -21,6 +21,10 @@ const FOLLOW_UP_FILLER = new Set([
   'endelea', 'eleza', 'zaidi', 'kwa', 'nini', 'kivipi', 'mfano', 'tafadhali', 'hilo', 'hili',
 ]);
 
+export function isTextbookAvailabilityQuestion(text: string): boolean {
+  return /\b(?:what (?:do you|books do you|textbooks do you) have(?!\s+to\b)|which (?:books|textbooks)|(?:what|which) (?:subjects|classes) (?:are (?:available|uploaded|supported)|do you (?:have|cover|teach)|can you teach)|available (?:books|textbooks|subjects|classes)|what (?:books|textbooks).{0,30}available|una (?:vitabu|masomo|mada)|vitabu (?:gani|vilivyopo)|masomo gani)\b/i.test(text);
+}
+
 /** True when the message names a topic beyond follow-up filler words. */
 export function hasOwnTopic(text: string): boolean {
   const meaningful = (text || '')
@@ -47,6 +51,7 @@ export function messageText(message: any): string {
 export function isLikelyCurriculumQuestion(text: string): boolean {
   const trimmed = (text || "").trim();
   if (!trimmed) return false;
+  if (isTextbookAvailabilityQuestion(trimmed)) return false;
   if (GREETING_OR_ACK_RE.test(trimmed)) return false;
   if (MATH_OR_VISUAL_RE.test(trimmed)) return false;
   if (EQUATION_RE.test(trimmed) && !/[a-z]{4,}\s+[a-z]{4,}/i.test(trimmed)) return false;

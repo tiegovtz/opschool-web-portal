@@ -6,7 +6,8 @@ import {
 import { createOpenAI } from "@ai-sdk/openai";
 import { createStudentTools, resolveTextbookSearchScope, runWithUsedFigureShortcodes } from "./utils/tools";
 import { searchTextbookPassages, normalizeFilterId, type TextbookSearchOutcome } from "../utils/textbookSearch";
-import { buildRetrievalQuery, looksLikeNoMatchAnswer } from "../utils/chatRetrieval";
+import { buildRetrievalQuery, isTextbookAvailabilityQuestion, looksLikeNoMatchAnswer, messageText } from "../utils/chatRetrieval";
+import { TextbookScopeError } from "../utils/textbookScope";
 import type { RagCitation } from "../utils/ragContext";
 import { readSessionToken } from "../utils/sessionAuth";
 import { CHAT_ERROR_PREFIX, classifyChatError, logChatError } from "../utils/chatErrors";
@@ -271,7 +272,7 @@ How to decide: check the student's message AND the searchTextbooks results. If e
 
 **When students start without a question:**
 1. Greet warmly: "Hello! I'm TIE AI Teacher. I'm here to help you learn from your textbooks. What topic or subject would you like to explore?"
-2. If they ask what subjects are available, call getSubjects and present the list.
+2. If they ask what books, subjects or classes you have, call getAvailableTextbooks and list only the uploaded library entries. getSubjects is the academic catalogue and is not evidence of uploaded content.
 3. Once they name a topic, call searchTextbooks to find relevant textbook content and teach from it.
 
 **IMAGE USAGE:**
@@ -350,8 +351,8 @@ Math computation and diagram generation are mechanical — they don't come from 
 
 **Available tools:**
 
-**1. searchTextbooks** (MANDATORY — call for every student question)
-   - CALL THIS FIRST for every student message
+**1. searchTextbooks** (MANDATORY for curriculum explanations unless passages are already provided)
+   - Use for curriculum content, not greetings or library availability
    - WHEN RESULTS FOUND (found: true): Teach ONLY from the returned textbook content. Mention the book title but no chapter/page numbers.
    - WHEN found: false: follow the tool instruction for missing scope, temporary search failure, or no matching material. Do NOT answer from your own knowledge.
 
@@ -362,12 +363,15 @@ Math computation and diagram generation are mechanical — they don't come from 
    - IF NO FIGURES (found: false): Do NOT mention images at all
    - FORMAT: [image:<exact shortcode>] — no markdown image syntax
 
-**3. getSubjects** - List available subjects
-   - USE FOR: When the student asks what subjects are available
+**3. getAvailableTextbooks** - List actual uploaded books and their classes
+   - USE FOR: "What do you have?", available books/subjects/classes, or checking a book after a passage search finds nothing.
+   - Library metadata cannot support a curriculum explanation; retrieve passages before teaching.
+
+**4. getSubjects** - Academic subject catalogue; does not establish book availability
 
 **DECISION FLOWCHART:**
-- Call searchTextbooks FIRST for every message, then teach from results. Call getChapterFigures for images if relevant.
-- Student asks about available subjects → Call getSubjects
+- For curriculum questions, use retrieved passages or call searchTextbooks, then teach from results. Call getChapterFigures for images if relevant.
+- Student asks what books/subjects/classes are available → Call getAvailableTextbooks. Do not invent a curriculum answer to an availability question.
 - searchTextbooks returns found: true → Teach from textbook content ONLY. Cite sources.
 - searchTextbooks returns found: false → Follow its instruction for clarification, retry, or missing material. Do NOT answer from your own knowledge.
 
@@ -377,8 +381,7 @@ Math computation and diagram generation are mechanical — they don't come from 
 - NEVER skip searchTextbooks because of language.
 
 **CRITICAL:**
-- NEVER skip calling searchTextbooks — regardless of language
-- NEVER answer questions without textbook context
+- NEVER teach curriculum facts without retrieved textbook context, regardless of language
 - NEVER supplement with your own knowledge for facts — only for explaining/simplifying what the textbook says
 - ALWAYS mention the book title in your response (no chapter/page numbers)
 `;
@@ -397,16 +400,16 @@ You have access to these tools. Use them APPROPRIATELY. You do NOT have access t
 - Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation (e.g., homosexuality/gay topics), or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate curriculum learning topics.
 
 **1. searchTextbooks** - Search uploaded textbooks for information
-   - CALL THIS for every student message
+   - CALL THIS for curriculum explanations unless passages are already provided; use getAvailableTextbooks for availability
    - WHEN USED: Mention the book title (e.g. "According to [Book Title]...") but no chapter/page numbers
-   - IF NO RESULTS: Tell the student the information is not in the uploaded textbooks
+   - IF NO RESULTS: Follow the returned instruction. Clarification or service errors do not prove content is missing.
 
-**2. getSubjects** - Get the list of available subjects
-   - USE FOR: Listing or validating subjects when the student asks what is available
+**2. getAvailableTextbooks** - List uploaded books for the selected subject/class
+   - USE FOR: Checking what books are actually available. getSubjects lists academic subjects only.
 
 **DECISION FLOWCHART:**
-- Call searchTextbooks for every message, then teach using results (no images—text only)
-- Student asks about available subjects → Call getSubjects
+- For curriculum questions, use retrieved passages or call searchTextbooks, then teach using results (no images—text only)
+- Student asks what books/subjects/classes are available → Call getAvailableTextbooks
 - Student asks for topics in a subject/level or "what is [subject] about" → Call searchTextbooks (use a query like "[Subject] Form [Level] topics" or "[Subject] syllabus")
 - Teaching this chapter → Teach with text only; do NOT use or mention images/figures/diagrams.
 
@@ -517,7 +520,10 @@ const SEARCH_FAILURE_INSTRUCTIONS = `
 
 *** TEXTBOOK SEARCH FAILURES (OVERRIDES THE "NOT IN MY TEXTBOOKS" RULES) ***
 - If searchTextbooks returns searchError: true, or the TEXTBOOK PASSAGES section says textbook search is unavailable, the search itself failed. This says NOTHING about whether the topic is in the textbooks.
-- In that case tell the student: "Textbook search is unavailable right now. Please try again in a few minutes." (Kiswahili: "Utafutaji wa vitabu haupatikani kwa sasa. Tafadhali jaribu tena baada ya dakika chache.")
+- For a search error, tell the student: "Textbook search is unavailable right now. Please try again in a few minutes." (Kiswahili: "Utafutaji wa vitabu haupatikani kwa sasa. Tafadhali jaribu tena baada ya dakika chache.")
+- If a tool returns needsClarification: true, no search was performed. Ask for only the missing or ambiguous detail; never say the textbook/topic is missing.
+- Retain the subject and class explicitly stated in earlier USER messages for follow-ups. Equivalent names such as Form 3, Form Three and Kidato cha Tatu refer to the same class. Do not silently switch classes.
+- An empty passage search proves only that this query had no matching passages. Use getAvailableTextbooks before claiming an entire book or class is unavailable.
 - NEVER say "I don't have information about that topic in my textbooks" after a search error, and never present an answer as coming from the textbooks when the search failed.`;
 
 function formatPreRetrieval(outcome: TextbookSearchOutcome): string {
@@ -634,6 +640,7 @@ export default defineEventHandler(async (event) => {
   const openai = getOpenAIClient(apiKey);
 
   const textbookScope = { subject: subjectId || subject, level: classLevelId || level };
+  const textbookUserMessages = messages.filter((message: any) => message.role === "user").map(messageText);
 
   // Server-side retrieval: search the textbooks for curriculum questions before
   // the model runs, so grounding does not depend on the model choosing the tool.
@@ -642,11 +649,15 @@ export default defineEventHandler(async (event) => {
   if (retrievalQuery) {
     let ragFilters: { classLevel: string; subject: string } | undefined;
     try {
-      ragFilters = await resolveTextbookSearchScope({}, textbookScope, authToken);
-    } catch {
+      ragFilters = await resolveTextbookSearchScope({}, textbookScope, authToken, textbookUserMessages);
+    } catch (error) {
       // Let the tool resolve scope from the question or request clarification.
       // Never broaden a missing or invalid selected scope to the whole corpus.
-      systemPrompt += "\nTEXTBOOK SCOPE: Use searchTextbooks with the subject and class level. If scope cannot be resolved, ask for clarification or retry; do not answer from an unfiltered corpus.";
+      if (error instanceof TextbookScopeError) {
+        systemPrompt += `\nTEXTBOOK SCOPE: ${error.message} No search has been performed, so this is NOT evidence of missing books. Use the subject/class explicitly stated in the user's conversation. Ask only for missing or ambiguous details; do not change classes on a follow-up.`;
+      } else {
+        preRetrieval = { status: "error", code: "upstream_error", message: "The subject/class catalogue is unavailable." };
+      }
     }
     if (ragFilters) {
       preRetrieval = await searchTextbookPassages(retrievalQuery, { ...ragFilters, caller: "chat" });
@@ -667,6 +678,7 @@ export default defineEventHandler(async (event) => {
   // Built per request so the student's token never leaks into another chat.
   const toolsForRequest = createStudentTools(authToken, {
     textbookScope,
+    textbookUserMessages,
     onCitations: addCitations,
   });
 
@@ -699,6 +711,10 @@ export default defineEventHandler(async (event) => {
     ] as any,
     stopWhen: stepCountIs(10),
     tools: toolsForRequest,
+    prepareStep: ({ stepNumber }: { stepNumber: number }) =>
+      stepNumber === 0 && isTextbookAvailabilityQuestion(textbookUserMessages.at(-1) || "")
+        ? { toolChoice: { type: "tool" as const, toolName: "getAvailableTextbooks" as const } }
+        : undefined,
     maxSteps: 7,
     providerOptions: {
       openai: {
