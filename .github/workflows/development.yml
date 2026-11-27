@@ -28,7 +28,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:adt
       - run: pnpm test:images
+      - run: pnpm test:pwa
+      - run: pnpm test:conversation
+      - run: pnpm test:media
+      - run: pnpm test:textbooks
+      - run: pnpm test:rag-context
       - run: pnpm build
+      - run: pnpm test:backend-proxy:integration
       - run: pnpm test:adt:api
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'

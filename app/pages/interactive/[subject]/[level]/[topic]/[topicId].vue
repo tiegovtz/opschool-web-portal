@@ -11,11 +11,11 @@ import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import type { ChapterAction } from "~/types/chapterAction";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon } from "~/utilities/jwToken";
-import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
+import { useBackendApi } from "~/composables/useBackendApi";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
 import {
   appendTrackedActivityId,
@@ -30,6 +30,9 @@ import {
 } from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
+const appBaseURL = useRuntimeConfig().app.baseURL;
+const mediaUrls = useMediaUrls();
+const { api: apiDocs, fetch: backendFetch } = useBackendApi();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
@@ -325,7 +328,7 @@ onUnmounted(() => window.removeEventListener("scroll", updateActiveSection));
 
 // Helper functions 
 const ensureAccessTokenValid = async () => {
-  if (isTokenExpiringSoon(signInAccessToken.value as string, 60)) {
+  if (isTokenExpiringSoon(signInAccessToken.value as string, 0)) {
     await redirectToAuth();
     return false;
   }
@@ -699,7 +702,7 @@ const getQNTopicChapter = async (chapterId: string) => {
 try {
   const { data: response, status, error: fetchError } = await fetchAsyncData(
     `chapters-${topicId}`,
-    () => $fetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
+    () => backendFetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`,
       },
@@ -719,6 +722,11 @@ try {
       (fetchError.value as any)?.status ??
       0,
     );
+    console.error('[Topic Page] Topic request failed', {
+      topicId,
+      statusCode,
+      message: (fetchError.value as any)?.statusMessage || 'Topic data is unavailable.',
+    });
     if (statusCode === 401 || statusCode === 403) {
       await redirectToAuth();
     }
@@ -1364,7 +1372,7 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div class="mx-auto notes md:px-4 w-full max-w-7xl flex-1" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content))))))">
+              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content, mediaUrls.options), mediaUrls.options), mediaUrls.options), mediaUrls.options), appBaseURL))">
             </div>
 
             <p id="notes-extra-details" class="sr-only">

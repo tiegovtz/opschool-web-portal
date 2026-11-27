@@ -5,7 +5,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, watch } from "vue";
 import { screenWidth } from "@/utilities/controlls";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import { HomeCustomScrollView } from "#components";
 import {
   filterKeyDataFromArrayOfJson,
@@ -71,6 +71,7 @@ useHead({
 
 // Define Cookie
 const userToken = useCookie("signInUserToken");
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 
@@ -187,7 +188,7 @@ const fetchTopics = async (params?: any) => {
     const { data: response, status: fetchStatus } = await fetchAsyncData(
       `interactive-${educationLevel.value}-${language.value}`,
       () =>
-        $fetch(url, {
+        backendFetch(url, {
           params: params,
         }),
     );
@@ -201,9 +202,6 @@ const fetchTopics = async (params?: any) => {
     slicedData.value = [];
   }
 };
-
-// Call Fetch Topics function
-fetchTopics({});
 
 // Watch screen width and update page size accordingly
 watch(
@@ -298,6 +296,8 @@ watch(filters, (filters) => {
 
   fetchTopics(payload);
 });
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchTopics({});
 </script>
 
 <template>

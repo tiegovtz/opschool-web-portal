@@ -16,6 +16,7 @@ const isDev = import.meta.dev;
 // so they don't pick up app.baseURL automatically.
 const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
 const chatApiPath = `${apiBasePath}/api/chat`;
+const mediaUrls = useMediaUrls();
 
 const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
 
@@ -1529,10 +1530,10 @@ const handleRead = async () => {
       audioUrl &&
       (audioUrl.startsWith("http://") || audioUrl.startsWith("https://"))
     ) {
-      finalAudioUrl = audioUrl;
+      finalAudioUrl = mediaUrls.audio(audioUrl);
     } else {
       // Use the /api/audio endpoint which handles audio streaming
-      finalAudioUrl = `/api/audio/${audioId}`;
+      finalAudioUrl = mediaUrls.audio(String(audioId));
     }
 
     // Set source and configure for streaming

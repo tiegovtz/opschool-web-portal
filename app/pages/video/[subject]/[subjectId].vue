@@ -4,7 +4,7 @@ import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import { screenWidth } from "@/utilities/controlls";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
@@ -20,6 +20,7 @@ import {
 
 
 // Defin Route
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const router = useRouter();
 const decodeParam = (value) => {
@@ -176,7 +177,7 @@ const fetchVideos = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => backendFetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -196,9 +197,6 @@ const fetchVideos = async (params) => {
     slicedData.value = [];
   }
 };
-
-// Call Fetch Topics function
-fetchVideos({ level: typeof route.query.level === "string" ? route.query.level : undefined, videoType });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -273,6 +271,8 @@ const applyClassFilter = (value) => fetchVideos({
   level: value || undefined,
   videoType: activeTab.value === 'class-videos' ? 'Others' : 'Conceptual',
 });
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchVideos({ level: typeof route.query.level === "string" ? route.query.level : undefined, videoType });
 </script>
 
 <template>

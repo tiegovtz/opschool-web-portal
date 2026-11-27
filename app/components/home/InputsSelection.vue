@@ -3,7 +3,7 @@ import type { ClassLevel } from "~/types/classlevel.interface";
 import type { educationLevel } from "~/types/educationlevel.interface";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import { adtClassOptions, adtSubjectOptions, adtDisplayName, type AdtOption, type AdtClassifications } from '~~/shared/adt/catalogue';
 import {
   getApiEducationLevelName,
@@ -149,6 +149,7 @@ const onSubjectChange = (nextSubject: string | number | null) => {
 };
 
 const token = useCookie("signInAccessToken").value;
+const { api: apiDocs, fetch: backendFetch } = useBackendApi();
 const headers = {
   "Content-Type": "application/json",
   Authorization: `Bearer ${token}`,
@@ -157,6 +158,7 @@ const headers = {
 const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   educationLevel[]
 >(apiDocs.educationLevel.getEducationLevels, {
+  $fetch: backendFetch,
   immediate: !props.classifications && !props.hideSubject,
   headers,
   default: () => [],
@@ -171,6 +173,7 @@ const selectedEducationBucket = computed(() => getEducationBucket(level.value));
 const { data: classLevels, pending: classLevelsPending } = useFetch<
   ClassLevel[]
 >(apiDocs.levels.getLevels, {
+  $fetch: backendFetch,
   immediate: !props.classifications,
   headers,
   query: computed(() =>
@@ -185,6 +188,7 @@ const { data: classLevels, pending: classLevelsPending } = useFetch<
 const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
   Subjects[]
 >(apiDocs.subjects.getPublicSubjects, {
+  $fetch: backendFetch,
   immediate: !props.classifications,
   headers,
   query: computed(() => {

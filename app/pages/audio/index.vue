@@ -4,7 +4,7 @@ import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, watch } from 'vue';
 import { screenWidth } from '@/utilities/controlls';
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
@@ -51,6 +51,7 @@ const error = ref(null);        // Initial Error State
 const status = ref('pending'); // Initial Status State
 const audios = ref();         // Initial Audios State
 const slicedData = ref();    // Initial slice data to 9
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
@@ -115,7 +116,7 @@ const fetchAudios = async (param?: any) => {
   try {
     status.value = 'pending';
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${educationLevel.value}-${language.value}-${param?.toString()}`, () => $fetch(apiDocs.audio.getPublicAudio, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${educationLevel.value}-${language.value}-${param?.toString()}`, () => backendFetch(apiDocs.audio.getPublicAudio, {
       method: 'GET',
       params: {
         educationLevel: getApiEducationLevelName(educationLevel.value),
@@ -139,9 +140,6 @@ const fetchAudios = async (param?: any) => {
     console.error(error);
   }
 }
-
-// Call Fetchaudios Function
-fetchAudios();
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -232,6 +230,8 @@ watch(filters, (filters) => {
 });
 
 const contentLayoutLanguage = useContentLayoutLanguage();
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchAudios();
 </script>
 
 <template>

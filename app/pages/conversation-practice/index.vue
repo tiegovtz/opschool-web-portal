@@ -294,6 +294,8 @@ definePageMeta({
 
 const router = useRouter()
 const route = useRoute()
+const conversationApiBase = `${useRuntimeConfig().app.baseURL}api/conversation`
+const mediaUrls = useMediaUrls()
 const authAccessTokenCookie = useCookie('signInAccessToken')
 const authHeaders = computed(() =>
   authAccessTokenCookie.value
@@ -449,6 +451,7 @@ let micStream = null
 let micAudioContext = null
 let micAnalyser = null
 let micRafId = null
+let micLevelVersion = 0
 const userAnswer = ref('')
 const textAnswer = ref('')
 const inputMode = ref('speech')
@@ -464,6 +467,33 @@ let autoCloseInterval = null
 
 // Speech Recognition
 let recognition = null
+let sessionVersion = 0
+let disposed = false
+const pendingConversationTimers = new Set()
+
+const scheduleConversation = (callback, delay) => {
+  const version = sessionVersion
+  const timer = setTimeout(() => {
+    pendingConversationTimers.delete(timer)
+    if (!disposed && version === sessionVersion && conversationStarted.value) callback()
+  }, delay)
+  pendingConversationTimers.add(timer)
+}
+
+const cancelConversationWork = () => {
+  sessionVersion++
+  pendingConversationTimers.forEach(clearTimeout)
+  pendingConversationTimers.clear()
+  if (autoCloseInterval) {
+    clearInterval(autoCloseInterval)
+    autoCloseInterval = null
+  }
+  isRecording.value = false
+  if (recognition) {
+    try { recognition.abort() } catch { /* Recognition may already have ended. */ }
+  }
+  stopMicLevel()
+}
 
 // ============================================================================
 // Computed Properties
@@ -488,6 +518,7 @@ const nextConversationPiece = computed(() => {
 const isConversationComplete = computed(() => !!conversationCompleteMessage.value)
 
 const stopMicLevel = () => {
+  micLevelVersion++
   if (micRafId != null) {
     cancelAnimationFrame(micRafId)
     micRafId = null
@@ -507,8 +538,14 @@ const stopMicLevel = () => {
 const startMicLevel = async () => {
   if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
   if (micStream || micAnalyser) return
+  const version = ++micLevelVersion
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    if (disposed || !isRecording.value || version !== micLevelVersion) {
+      stream.getTracks().forEach((track) => track.stop())
+      return
+    }
+    micStream = stream
     micAudioContext = new AudioContext()
     const source = micAudioContext.createMediaStreamSource(micStream)
     micAnalyser = micAudioContext.createAnalyser()
@@ -529,7 +566,7 @@ const startMicLevel = async () => {
     }
     update()
   } catch {
-    stopMicLevel()
+    if (version === micLevelVersion) stopMicLevel()
   }
 }
 
@@ -586,13 +623,15 @@ onMounted(() => {
       recognition.lang = speechRecognitionLang.value
 
       recognition.onresult = (event) => {
+        if (disposed || !conversationStarted.value || !isRecording.value) return
         const transcript = event.results[0][0].transcript
+        isRecording.value = false
         userAnswer.value = transcript
         validateAnswer(transcript)
       }
 
       recognition.onerror = (event) => {
-        throw event.error;
+        if (disposed || event.error === 'aborted') return
         isRecording.value = false
         isProcessing.value = false
         showStatus('error', `Speech recognition error: ${event.error}`)
@@ -654,6 +693,8 @@ watch(
 )
 
 onUnmounted(() => {
+  disposed = true
+  cancelConversationWork()
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown)
     window.removeEventListener('popstate', handlePopstate)
@@ -662,9 +703,6 @@ onUnmounted(() => {
     document.body.style.overflow = originalBodyOverflow.value
   }
   stopMicLevel()
-  if (recognition) {
-    recognition.stop()
-  }
   if (audioRef.value) {
     audioRef.value.pause()
     audioRef.value = null
@@ -682,12 +720,13 @@ onUnmounted(() => {
 // Methods
 // ============================================================================
 const detectSpeakerGenderFromAllPieces = async () => {
+  const version = sessionVersion
   try {
     const allPiecesText = conversationPieces.value.join(' ')
     const fallbackSpeaker = String(
       conversationEntries.value[0]?.speaker || ''
     ).trim()
-    const voiceDetection = await $fetch('/api/conversation/detect-voice', {
+    const voiceDetection = await $fetch(`${conversationApiBase}/detect-voice`, {
       method: 'POST',
       headers: authHeaders.value,
       body: {
@@ -698,7 +737,7 @@ const detectSpeakerGenderFromAllPieces = async () => {
       },
     })
 
-    if (voiceDetection.success && voiceDetection.voiceType) {
+    if (!disposed && version === sessionVersion && voiceDetection.success && voiceDetection.voiceType) {
       voiceType.value = voiceDetection.voiceType
       // Update state with detected gender
       conversationState.value.aiGender = voiceDetection.voiceType
@@ -715,7 +754,7 @@ const loadConversationPieces = async () => {
     const query = {}
     if (chapterId) query.chapterId = chapterId
     if (identifier) query.identifier = identifier
-    const response = await $fetch('/api/conversation/engage', {
+    const response = await $fetch(`${conversationApiBase}/engage`, {
       query,
       headers: authHeaders.value,
     })
@@ -727,8 +766,12 @@ const loadConversationPieces = async () => {
     }
     return { pieces, entries }
   } catch (error) {
-    void error;
-    showStatus('error', 'Failed to load conversation from backend')
+    const status = error?.statusCode || error?.status || error?.response?.status
+    const message = status === 401 || status === 403
+      ? 'Please sign in again to load this conversation.'
+      : 'Failed to load conversation from backend. Please try again.'
+    previewError.value = message
+    showStatus('error', message)
     return { pieces: [], entries: [] }
   }
 }
@@ -740,7 +783,7 @@ const fetchPreviewPieces = async () => {
     const data = await loadConversationPieces()
     previewPieces.value = data.pieces
     previewEntries.value = data.entries
-    if (!data.pieces.length) {
+    if (!data.pieces.length && !previewError.value) {
       previewError.value = 'No preview available.'
     }
   } catch (error) {
@@ -751,11 +794,13 @@ const fetchPreviewPieces = async () => {
 }
 
 const startConversation = async () => {
+  const version = ++sessionVersion
   const data = previewPieces.value.length
     ? { pieces: previewPieces.value, entries: previewEntries.value }
     : await loadConversationPieces()
+  if (disposed || version !== sessionVersion) return
   if (!data.pieces.length) {
-    showStatus('error', 'No conversation pieces found')
+    showStatus('error', previewError.value || 'No conversation pieces found')
     return
   }
 
@@ -787,10 +832,11 @@ const startConversation = async () => {
   }
 
   // Pre-analyze conversation for speaker identity
-  detectSpeakerGenderFromAllPieces()
+  if (inputMode.value === 'speech') detectSpeakerGenderFromAllPieces()
 
   // Start with first piece
   nextTick(() => {
+    if (disposed || version !== sessionVersion || !conversationStarted.value) return
     if (inputMode.value === 'text') {
       textAnswer.value = ''
       statusMessage.value = null
@@ -813,6 +859,7 @@ const playCurrentPiece = async () => {
   if (isPlaying.value || isGeneratingTTS.value || !currentConversationPiece.value) return
   
   if (inputMode.value === 'text') return
+  const version = sessionVersion
 
   const cachedAudioUrl = audioUrlCache.value[currentIndex.value]
   if (cachedAudioUrl) {
@@ -839,7 +886,7 @@ const playCurrentPiece = async () => {
 
     // Voice detection
     try {
-      const voiceDetection = await $fetch('/api/conversation/detect-voice', {
+      const voiceDetection = await $fetch(`${conversationApiBase}/detect-voice`, {
         method: 'POST',
         headers: authHeaders.value,
         body: {
@@ -850,6 +897,7 @@ const playCurrentPiece = async () => {
         },
       })
 
+      if (disposed || version !== sessionVersion) return
       if (voiceDetection.success && voiceDetection.shouldUpdate && voiceDetection.voiceType) {
         voiceType.value = voiceDetection.voiceType
         conversationState.value.aiGender = voiceDetection.voiceType
@@ -859,7 +907,8 @@ const playCurrentPiece = async () => {
     }
 
     // Generate TTS
-    const response = await $fetch('/api/conversation/tts', {
+    if (disposed || version !== sessionVersion) return
+    const response = await $fetch(`${conversationApiBase}/tts`, {
       method: 'POST',
       headers: authHeaders.value,
       body: {
@@ -869,8 +918,9 @@ const playCurrentPiece = async () => {
       },
     })
 
+    if (disposed || version !== sessionVersion) return
     if (response.success && (response.audioBase64 || response.audioUrl)) {
-      let resolvedUrl = response.audioUrl
+      let resolvedUrl = response.audioUrl ? mediaUrls.audio(response.audioUrl) : ''
       if (response.audioBase64) {
         const binary = atob(response.audioBase64)
         const bytes = new Uint8Array(binary.length)
@@ -904,6 +954,7 @@ const playCurrentPiece = async () => {
     }
   } catch (error) {
     void error;
+    if (disposed || version !== sessionVersion) return
     isGeneratingTTS.value = false
     showStatus('error', 'Failed to generate audio')
   }
@@ -921,7 +972,7 @@ const stopAudioAndStartRecording = () => {
 const onAudioEnded = () => {
   isPlaying.value = false
   if (conversationStarted.value && currentIndex.value < conversationPieces.value.length) {
-    setTimeout(() => {
+    scheduleConversation(() => {
       if (inputMode.value === 'speech') {
         startRecording()
       } else {
@@ -943,6 +994,8 @@ const onAudioTimeUpdate = () => {
 }
 
 const startRecording = () => {
+  if (disposed || !conversationStarted.value || isConversationComplete.value
+    || isRecording.value || isProcessing.value || isGeneratingTTS.value) return
   if (!recognition) {
     showStatus('error', 'Speech recognition is not available')
     return
@@ -980,14 +1033,15 @@ const submitTextAnswer = () => {
 }
 
 const validateAnswer = async (answer) => {
-  if (!answer.trim()) return
+  if (!answer.trim() || disposed || !conversationStarted.value || isProcessing.value) return
+  const version = sessionVersion
 
   isProcessing.value = true
   statusMessage.value = null
 
   try {
     // Send compact state instead of full history
-    const response = await $fetch('/api/conversation/validate', {
+    const response = await $fetch(`${conversationApiBase}/validate`, {
       method: 'POST',
       headers: authHeaders.value,
       body: {
@@ -1002,6 +1056,7 @@ const validateAnswer = async (answer) => {
       },
     })
 
+    if (disposed || version !== sessionVersion) return
     if (response.success) {
       // Update compact state from backend's enriched state
       if (response.enrichedState) {
@@ -1061,7 +1116,7 @@ const validateAnswer = async (answer) => {
           if (inputMode.value === 'text') {
             textAnswer.value = ''
           } else {
-            setTimeout(() => {
+            scheduleConversation(() => {
               playCurrentPiece()
             }, 2000)
           }
@@ -1075,13 +1130,15 @@ const validateAnswer = async (answer) => {
     }
   } catch (error) {
     void error;
+    if (disposed || version !== sessionVersion) return
     showStatus('error', 'Failed to validate answer')
   } finally {
-    isProcessing.value = false
+    if (version === sessionVersion) isProcessing.value = false
   }
 }
 
 const resetConversation = () => {
+  cancelConversationWork()
   conversationStarted.value = false
   conversationPieces.value = []
   conversationEntries.value = []
@@ -1094,6 +1151,7 @@ const resetConversation = () => {
   isPlaying.value = false
   isRecording.value = false
   isProcessing.value = false
+  isGeneratingTTS.value = false
   Object.values(audioUrlCache.value).forEach((url) => {
     if (typeof url === 'string' && url.startsWith('blob:')) {
       URL.revokeObjectURL(url)

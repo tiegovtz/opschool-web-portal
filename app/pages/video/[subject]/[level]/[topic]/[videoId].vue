@@ -1,10 +1,12 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
+import CardImage from '~/components/home/CardImage.vue';
 import { getVideoPlaybackError } from "~/utilities/videoPlaybackError";
 
 const route = useRoute();
 const router = useRouter();
-const videoId = route.fullPath.split("/").pop();
+const mediaUrls = useMediaUrls();
+const videoId = String(route.params.videoId || '');
 const videoTitle = String(route.fullPath.split("/")[4])
     .toString()
     .replaceAll("%20", " ")
@@ -15,7 +17,7 @@ const videoStandard = String(route.fullPath.split("/")[2])
 const videoSubject = String(route.fullPath.split("/")[3])
     .toString()
     .replaceAll("%20", " ");
-const videoUrl = `/api/video/${videoId}`
+const videoUrl = mediaUrls.video(videoId)
 const playbackError = ref(null);
 const playerKey = ref(0);
 
@@ -174,7 +176,7 @@ const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level)
                     <div class="flex items-center w-full h-full gap-4 my-4" v-if="videoInfo">
                         <!-- Thumbnail Image -->
                         <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
-                            <NuxtImg :src="videoInfo?.thumbnail" :alt="videoInfo?.name"
+                            <CardImage :src="videoInfo?.thumbnail" :alt="videoInfo?.name" :width="112" :height="112"
                                 class="object-cover w-full h-full transition-transform duration-500" />
                         </div>
 

@@ -1,9 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { vite as vidstack } from "vidstack/plugins";
+import { clearServiceWorker } from "./scripts/clear-service-worker.mjs";
 
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
   process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN,
+  process.env.NUXT_PUBLIC_UPLOADS_BASE_URL,
   "http://41.59.251.166",
   "https://opschool.tie.go.tz",
 ].flatMap((value) => {
@@ -64,6 +66,15 @@ export default defineNuxtConfig({
     public: {
       localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
       imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
+      // Base origin for relative "uploads/..." paths embedded in chapter
+      // content (models, experiments, inline audio). Derived from the API
+      // base URL so each environment resolves its own uploads correctly,
+      // rather than content being frozen to whichever environment it was
+      // authored/copied from.
+      // Falls back to "/api" (gateway-relative, not an absolute host) so
+      // environments that leave VITE_API_BASE_URL unset still resolve
+      // uploads against their own gateway instead of a hardcoded host.
+      uploadsBaseUrl: process.env.NUXT_PUBLIC_UPLOADS_BASE_URL || (process.env.VITE_API_BASE_URL || "/api/v1").replace(/\/v\d+\/?$/, ""),
     },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
@@ -116,17 +127,25 @@ export default defineNuxtConfig({
     },
   },
 
-  // Long-lived caching for build output and static assets (PageSpeed:
-  // "Use efficient cache lifetimes"). _nuxt/** filenames are content-hashed
-  // by Vite, so a 1-year immutable cache is safe; unhashed public assets
-  // (images, local fonts, pwa icons) get a shorter cache instead.
+  // Existing installations must fetch the worker that unregisters the old PWA.
   routeRules: {
-    "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
-    "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
-    "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/sw.js": { headers: { "cache-control": "no-store" } },
+  },
+  // Content-hashed build output can keep its normal immutable HTTP cache.
+  $production: {
+    routeRules: {
+      "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+      "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
+      "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+    },
+  },
+  $development: {
+    routeRules: {
+      "/_nuxt/**": { headers: { "cache-control": "no-store" } },
+    },
   },
 
   hooks: {
@@ -141,102 +160,12 @@ export default defineNuxtConfig({
     },
   },
 
+  // Keep the integration disabled; public/sw.js retires existing installations.
   pwa: {
-    registerType: "autoUpdate",
-    includeAssets: ["favicon.ico", "apple-touch-icon.png"],
-    manifest: {
-      name: "TIE OpSchool",
-      short_name: "OpSchool",
-      description: "Tanzania Institute of Education online learning platform",
-      theme_color: "#0a7ac8",
-      background_color: "#ffffff",
-      display: "standalone",
-      orientation: "any",
-      scope: "/",
-      start_url: "/",
-      lang: "sw",
-      categories: ["education"],
-      icons: [
-        { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
-        { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
-        { src: "/pwa-maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-      ],
-    },
-    workbox: {
-      cleanupOutdatedCaches: true,
-      clientsClaim: true,
-      skipWaiting: true,
-      globPatterns: ["**/_nuxt/**/*.{js,css,woff2}", "pwa-*.png", "apple-touch-icon.png", "favicon.ico"],
-      navigateFallback: undefined,
-      runtimeCaching: [
-        {
-          urlPattern: ({ url }: { url: URL }) => url.origin === location.origin
-            && /^\/api\/(?:backend|auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
-          handler: "NetworkOnly",
-        },
-        {
-          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
-            && url.origin === location.origin && url.pathname.startsWith("/api/library/"),
-          handler: "CacheFirst",
-          options: {
-            cacheName: "opschool-adt-publications",
-            expiration: { maxEntries: 1500, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            cacheableResponse: { statuses: [200] },
-          },
-        },
-        {
-          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
-            && url.origin === location.origin && url.pathname.startsWith("/api/adt/"),
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "opschool-adt-catalogue",
-            networkTimeoutSeconds: 5,
-            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
-            cacheableResponse: { statuses: [200] },
-          },
-        },
-        {
-          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.mode === "navigate"
-            && url.origin === location.origin,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "opschool-pages",
-            networkTimeoutSeconds: 5,
-            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 14 },
-            cacheableResponse: { statuses: [200] },
-          },
-        },
-        {
-          urlPattern: ({ request }: { request: Request }) => ["script", "style", "worker", "font"].includes(request.destination),
-          handler: "CacheFirst",
-          options: {
-            cacheName: "opschool-static-resources",
-            expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            cacheableResponse: { statuses: [0, 200] },
-          },
-        },
-        {
-          urlPattern: ({ request }: { request: Request }) => ["image", "audio", "video"].includes(request.destination),
-          handler: "StaleWhileRevalidate",
-          options: {
-            cacheName: "opschool-media",
-            expiration: { maxEntries: 750, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            cacheableResponse: { statuses: [0, 200] },
-          },
-        },
-        {
-          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
-            && url.origin === location.origin,
-          handler: "NetworkFirst",
-          options: {
-            cacheName: "opschool-accessed-content",
-            networkTimeoutSeconds: 5,
-            expiration: { maxEntries: 750, maxAgeSeconds: 60 * 60 * 24 * 14 },
-            cacheableResponse: { statuses: [200] },
-          },
-        },
-      ],
-    },
+    disable: true,
+    manifest: false,
+    injectRegister: false,
+    client: { registerPlugin: false },
     devOptions: { enabled: false },
   },
 
@@ -305,17 +234,15 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      script: [{
+        key: "clear-service-worker",
+        tagPriority: "critical",
+        innerHTML: `(${clearServiceWorker.toString()})().catch(error => console.warn('Service worker cleanup failed:', error));`,
+      }],
       meta: [
         { name: "generator", content: "" },
         { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
         { name: "theme-color", content: "#0a7ac8" },
-        { name: "mobile-web-app-capable", content: "yes" },
-        { name: "apple-mobile-web-app-capable", content: "yes" },
-        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-        { name: "apple-mobile-web-app-title", content: "OpSchool" },
-      ],
-      link: [
-        { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
       ],
     },
   },

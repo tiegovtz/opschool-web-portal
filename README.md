@@ -82,6 +82,13 @@ Set `VITE_API_BASE_URL` in `.env` to the absolute upstream API URL (including it
 API, not `/api/backend/v1`, to avoid a proxy loop. Existing server features call the
 upstream directly, and existing media URLs keep using the upstream asset base.
 
+Chapter pages and resource lists use the portal backend proxy for both browser navigation and server
+rendering on reload. The proxy reads `NUXT_BACKEND_API_BASE_URL` at runtime and
+forwards the current user's authentication. Under `/portal/`, these page requests
+use `/portal/api/backend/v1/**`.
+Resource pages await their initial list before rendering and reject malformed
+responses instead of treating them as empty content.
+
 For example, `/api/backend/v1/public-subjects?educationLevel=lower+secondary`
 is forwarded to `${VITE_API_BASE_URL}/public-subjects?educationLevel=lower+secondary`.
 The proxy forwards bearer authentication, request bodies, query strings, and

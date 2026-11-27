@@ -1,6 +1,6 @@
 import type { Activity } from "~/types/activity-types";
 import type { ServerQuestionType } from "~/types/activity-props";
-import apiDocs from "~/utilities/apiDocs";
+import { resolveMediaUrl } from "~/utilities/parsers/mediaUrl";
 
 type NullableString = string | null;
 
@@ -111,21 +111,7 @@ const toExternalAssetUrl = (value: unknown): NullableString => {
   const normalizedValue = toNullableString(value);
   if (!normalizedValue) return null;
 
-  if (
-    normalizedValue.startsWith("http://") ||
-    normalizedValue.startsWith("https://") ||
-    normalizedValue.startsWith("//") ||
-    normalizedValue.startsWith("data:") ||
-    normalizedValue.startsWith("blob:")
-  ) {
-    return normalizedValue;
-  }
-
-  try {
-    return new URL(normalizedValue, apiDocs.baseURL).toString();
-  } catch {
-    return normalizedValue;
-  }
+  return resolveMediaUrl(normalizedValue);
 };
 
 const normalizeDescription = (

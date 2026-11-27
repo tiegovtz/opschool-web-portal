@@ -7,7 +7,7 @@ import {
   screenWidth,
 } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import {
   removeDataFromArrayOfJson,
 } from "~/utilities/filterJson";
@@ -96,9 +96,11 @@ useHead({
 
 // Define Cookie
 const userToken = useCookie("signInUserToken");
+const accessToken = useCookie("signInAccessToken");
 const hubHeaderLangCookie = useHubHeaderLanguage();
 const hubEducationLevelCookie = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const router = useRouter();
 // Retire old design-preview links; ADT always uses the configured Store now.
@@ -345,12 +347,12 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
   try {
     const responses = await Promise.all(
       getRequestedEducationLevels().map((educationLevel) =>
-        $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
+        backendFetch<Subjects>(apiDocs.subjects.getPublicSubjects, {
           params: {
             educationLevel: getApiEducationLevelName(educationLevel),
           },
           headers: {
-            Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+            Authorization: `Bearer ${accessToken.value}`,
           },
         }),
       ),
@@ -558,12 +560,12 @@ const fetchData = async (params?: any) => {
 
   try {
     announcement.value = `loading  ${getTabLabel(tab)} please wait.`;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(
+    const { data: response, status: fetchStatus, error: fetchError } = await fetchAsyncData(
       `tab-${requestedEducationLevels.join("-")}-${currentLanguage.value}-${tab}-${subjectId.value ? subjectId.value : ""}`,
       async () => {
         const responses = await Promise.all(
           requestedEducationLevels.map((level) =>
-            $fetch(url, {
+            backendFetch(url, {
               params: {
                 ...params,
                 ...(!subjectId.value
@@ -571,7 +573,7 @@ const fetchData = async (params?: any) => {
                   : {}),
               },
               headers: {
-                Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+                Authorization: `Bearer ${accessToken.value}`,
               },
             }),
           ),
@@ -598,6 +600,7 @@ const fetchData = async (params?: any) => {
     }
 
     status.value = fetchStatus.value;
+    error.value = fetchError.value;
 
     // Call sliceData after data is loaded
     sliceData(
@@ -758,7 +761,6 @@ watch(
     filterValue.value = {};
     resettingFilterForTabChange = false;
   },
-  { immediate: true },
 );
 
 watch(hubSection, () => {
@@ -873,6 +875,8 @@ const handleSubjectSelect = async (
   const target = getSubjectRoute(id, subjectSlug.value);
   await router.push(target);
 };
+
+await fetchData();
 </script>
 
 <template>

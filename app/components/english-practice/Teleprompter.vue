@@ -184,6 +184,7 @@ const isSwahili = computed(() => props.uiLanguage === 'sw');
 
 // Read-aloud composable
 const readAloud = useReadAloud();
+const mediaUrls = useMediaUrls();
 
 // Text container ref for scrolling
 const textContainer = ref<HTMLElement | null>(null);
@@ -312,11 +313,7 @@ const isReadAloudDisabled = computed(() => {
 });
 
 const resolvePlayableAudio = (audioUrl: string): string => {
-  if (!audioUrl) return '';
-  if (/^(blob:|data:)/i.test(audioUrl)) return audioUrl;
-  if (/^https?:\/\//i.test(audioUrl)) return audioUrl;
-  if (audioUrl.startsWith('/')) return audioUrl;
-  return `/${audioUrl}`;
+  return mediaUrls.audio(audioUrl);
 };
 
 // Handle read-aloud toggle

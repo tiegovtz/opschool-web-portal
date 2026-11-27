@@ -2,9 +2,9 @@
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { screenWidth } from "@/utilities/controlls";
-import apiDocs from "~/utilities/apiDocs";
+import { useBackendApi } from "~/composables/useBackendApi";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
@@ -21,6 +21,7 @@ import {
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
+const { api: apiDocs, fetchList: backendFetch } = useBackendApi();
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
@@ -151,7 +152,7 @@ const fetchExperiments = async (param?: any) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments-${educationLevel.value}-${language.value}`, () => $fetch(apiDocs.experiments.getPublicExperiments, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments-${educationLevel.value}-${language.value}`, () => backendFetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
       params: {
         educationLevel: getApiEducationLevelName(educationLevel.value),
@@ -173,14 +174,6 @@ const fetchExperiments = async (param?: any) => {
     console.error(error);
   }
 };
-
-//##########################################################################
-//----------------- On Mounted Lifecycle Hook ------------------------------
-//##########################################################################
-onMounted(async () => {
-  await fetchExperiments();
-});
-
 
 //##########################################################################
 //----------------- assigning page size based on screen sizes --------------
@@ -280,6 +273,8 @@ watch(filters, (filters) => {
 
 const contentLayoutLanguage = useContentLayoutLanguage();
 
+// Load after pagination and filters are initialized, and wait during SSR.
+await fetchExperiments();
 </script>
 
 <template>

@@ -1,8 +1,11 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
+import CardImage from '~/components/home/CardImage.vue';
+import { resolveExperimentEntryUrl } from "~/utilities/resolveUploadUrl";
 
 const route = useRoute();
 const router = useRouter();
+const mediaUrls = useMediaUrls();
 const safeDecode = (value) => {
     const raw = typeof value === "string" ? value : "";
     try {
@@ -68,6 +71,20 @@ const experimentInfo = ref();      // Initial experimentInfo state
 const isFullscreen = ref(false);    // Initial isFullscreen state
 const webglSupported = ref(true);   // Initial webglSupported state
 
+// stepsFileUrl is the package's folder (the API only stores the zip's own entry path,
+// e.g. ".../steps/<id>/Activity2.1/"); the uploads server 404s on a bare folder path, so
+// the entry page has to be named explicitly, same as the mobile app does. The entry page's
+// name varies by package (index.html or find.html), so this is resolved once the folder
+// URL is known, by probing for which one actually exists.
+const experimentEntrySrc = ref("");
+watch(
+    () => experimentInfo.value?.stepsFileUrl,
+    async (stepsFileUrl) => {
+        experimentEntrySrc.value = stepsFileUrl ? await resolveExperimentEntryUrl(mediaUrls.asset(stepsFileUrl)) : "";
+    },
+    { immediate: true },
+);
+
 // Check if WebGL is supported
 if (import.meta.client) {
     webglSupported.value = !!window.WebGLRenderingContext;
@@ -80,7 +97,7 @@ const auth_token = useCookie('signInAccessToken').value;
 const fetchExperimentById = async () => {
     try {
         status.value = 'pending';
-        const response = await $fetch(apiDocs.experiments.getExperimentId.replaceAll(':id', experimentId), {
+        const response = await $fetch(apiDocs.experiments.getExperimentId.replaceAll(':id', experimentId).replaceAll('{id}', experimentId), {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -91,9 +108,9 @@ const fetchExperimentById = async () => {
         experimentInfo.value = response;
         status.value = 'success';
 
-    } catch (error) {
+    } catch (fetchError) {
         status.value = 'error';
-        error.value = error
+        error.value = fetchError
     }
 }
 
@@ -218,7 +235,7 @@ onMounted(() => {
                         <iframe :class="[
                             ' w-full  rounded-md mt-6',
                             isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
-                        ]" :src="experimentInfo.stepsFileUrl" frameborder="0" title="Interactive experiment steps"
+                        ]" :src="experimentEntrySrc" frameborder="0" title="Interactive experiment steps"
                             loading="lazy"></iframe>
                         <!-- full screen controls -->
                         <div class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
@@ -243,7 +260,7 @@ onMounted(() => {
                         aria-label="Experiment details">
                         <!-- Thumbnail Image -->
                         <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
-                            <NuxtImg :src="experimentInfo?.thumbnail" :alt="experimentInfo?.name"
+                            <CardImage :src="experimentInfo?.thumbnail" :alt="experimentInfo?.name" :width="112" :height="112"
                                 class="object-cover w-full h-full transition-transform duration-500" />
                         </div>
 

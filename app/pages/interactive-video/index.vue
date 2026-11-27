@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { mediaSourceFromHtml } from '~/utilities/mediaUrls';
 import InteractiveVideo from '~/components/interactive/InteractiveVideo.vue'
 import type { VideoInteraction } from '~/types/interactive-video.interface'
 import type {
@@ -42,7 +43,8 @@ const router = useRouter()
 const authRedirectTarget = computed(() => route.fullPath)
 const { snapshotId: activeRecommendationSnapshotId } =
   useRecommendationSnapshot()
-const videoSrc = ref<string>('/videos/TestVideo.mp4')
+const mediaUrls = useMediaUrls()
+const videoSrc = ref<string>('')
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const handlePlaybackError = async () => {
@@ -58,24 +60,13 @@ const topicUrl = computed(() => {
     return route.query.url as string
   }
   // Otherwise, try to extract from current route or use default
-  return 'http://localhost:3000/interactive/Form%201/Biology/Introduction%20to%20Biology%20/680e2ba64750cdf4e8ed331b'
+  return ''
 })
 
 // Function to extract video URL from chapter content
 const extractVideoUrl = (content: string): string | null => {
-  if (!content) return null
-
-  // Regular expression to match <video> tags with a <source> inside
-  const regex = /<video\b[^>]*>\s*<source\s+src="([^"]+)"[^>]*>\s*<\/video>/gi
-  const match = regex.exec(content)
-
-  if (match && match[1]) {
-    // Convert the video ID to the API endpoint format
-    const videoId = match[1]
-    return `/api/video/${videoId}`
-  }
-
-  return null
+  const source = mediaSourceFromHtml(content, 'video')
+  return source ? mediaUrls.video(source) : null
 }
 
 // Fetch video - either directly from video ID or from topic
@@ -99,7 +90,7 @@ const fetchVideo = async () => {
     }
 
     // Sign in again when the access token is expiring.
-    if (isTokenExpiringSoon(signInAccessToken.value, 60)) {
+    if (isTokenExpiringSoon(signInAccessToken.value, 0)) {
       await navigateTo({
         path: '/auth',
         query: { redirect: authRedirectTarget.value },
@@ -109,7 +100,7 @@ const fetchVideo = async () => {
 
     // If video ID is provided directly, use it
     if (videoId.value) {
-      const videoPath = `/api/video/${videoId.value}`
+      const videoPath = mediaUrls.video(videoId.value)
       videoSrc.value = videoPath
       // Wait a bit for the video element to update
       await nextTick()
@@ -121,7 +112,7 @@ const fetchVideo = async () => {
 
     // If video URL is provided directly, use it
     if (videoUrl.value) {
-      videoSrc.value = videoUrl.value
+      videoSrc.value = mediaUrls.video(videoUrl.value)
       // Wait a bit for the video element to update
       await nextTick()
       isLoading.value = false
@@ -161,7 +152,7 @@ const fetchVideoFromTopic = async () => {
     }
 
     // Fetch chapters for this topic
-    const { data: chaptersData, error: chaptersError } = await useFetch(`/api/topics/${topicId}`, {
+    const { data: chaptersData, error: chaptersError } = await useFetch(mediaUrls.portal(`api/topics/${encodeURIComponent(topicId)}`), {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`
       }
@@ -184,7 +175,7 @@ const fetchVideoFromTopic = async () => {
     }
 
     // Fetch chapter content
-    const { data: chapterData, error: chapterError } = await useFetch<{ content?: string }>(`/api/topics/chapters/${chapterId}`, {
+    const { data: chapterData, error: chapterError } = await useFetch<{ content?: string }>(mediaUrls.portal(`api/topics/chapters/${encodeURIComponent(chapterId)}`), {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`
       }

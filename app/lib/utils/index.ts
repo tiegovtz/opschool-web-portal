@@ -1,6 +1,10 @@
 export * from "~/utilities/utils";
 
-const SMARTBOOK_BASE_URL = "http://41.59.251.164:9000/smartbook";
+// No known live "smartbook" host exists in this deployment (not in nginx,
+// the API, or the portal's own server routes) -- this looks like leftover
+// config from a predecessor system. Falls back to a gateway-relative path
+// instead of a hardcoded, long-dead external host.
+const SMARTBOOK_BASE_URL = import.meta.env?.VITE_SMARTBOOK_BASE_URL || "/smartbook";
 
 export function getImageUrl(
   path?: string | null,
