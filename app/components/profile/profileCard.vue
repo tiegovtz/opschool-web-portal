@@ -300,6 +300,7 @@ const deletePassword = ref("");
 const deleteBusy = ref(false);
 const deleteError = ref<string | null>(null);
 const deleteResult = ref<"deleted" | "requested" | null>(null);
+const deleteEstimatedHours = ref<number | null>(null);
 const nuxtApp = useNuxtApp();
 
 const openDeleteConfirm = () => {
@@ -323,15 +324,23 @@ const confirmAccountDeletion = async () => {
   deleteError.value = null;
 
   try {
-    const response = await $fetch<{ deleted: boolean }>(apiDocs.auth.deleteAccount, {
-      method: "POST",
-      body: { password: deletePassword.value },
-      headers: {
-        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+    const response = await $fetch<{ deleted: boolean; estimatedCompletionHours?: number }>(
+      apiDocs.auth.deleteAccount,
+      {
+        method: "POST",
+        body: { password: deletePassword.value },
+        headers: {
+          Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+        },
       },
-    });
+    );
 
     deleteResult.value = response?.deleted ? "deleted" : "requested";
+    deleteEstimatedHours.value = response?.deleted
+      ? null
+      : response?.estimatedCompletionHours && response.estimatedCompletionHours > 0
+        ? response.estimatedCompletionHours
+        : 24;
     deletePassword.value = "";
   } catch (error: any) {
     const fetchError = error as FetchError;
@@ -1123,8 +1132,8 @@ const discardChanges = () => {
               <p class="text-gray-700">
                 {{
                   isSw
-                    ? "Ufutaji unaendelea. Umetoka kwenye akaunti yako."
-                    : "Your account is closed. Deletion is still being processed."
+                    ? `Akaunti yako imefungwa. Tunatarajia kukamilisha ufutaji ndani ya saa ${deleteEstimatedHours ?? 24}.`
+                    : `Your account is closed. We expect deletion to finish within ${deleteEstimatedHours ?? 24} ${(deleteEstimatedHours ?? 24) === 1 ? "hour" : "hours"}.`
                 }}
               </p>
             </template>
