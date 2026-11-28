@@ -291,6 +291,62 @@ const updatedProfile = async () => {
   }
 };
 
+// Destructive and not something people stumble onto while editing their profile --
+// tucked behind a low-emphasis disclosure, collapsed by default, instead of sitting
+// as a plain button next to Save/Discard (mirrors the mobile app's account options).
+const showAccountOptions = ref(false);
+const showDeleteConfirm = ref(false);
+const deletePassword = ref("");
+const deleteBusy = ref(false);
+const deleteError = ref<string | null>(null);
+const deleteResult = ref<"deleted" | "requested" | null>(null);
+const nuxtApp = useNuxtApp();
+
+const openDeleteConfirm = () => {
+  if (deleteResult.value) return;
+  deleteError.value = null;
+  deletePassword.value = "";
+  showDeleteConfirm.value = true;
+};
+
+const dismissDeleteConfirm = () => {
+  if (deleteBusy.value) return;
+  showDeleteConfirm.value = false;
+  if (deleteResult.value) {
+    nuxtApp.$authSession.end("logout");
+  }
+};
+
+const confirmAccountDeletion = async () => {
+  if (!deletePassword.value || deleteBusy.value) return;
+  deleteBusy.value = true;
+  deleteError.value = null;
+
+  try {
+    const response = await $fetch<{ deleted: boolean }>(apiDocs.auth.deleteAccount, {
+      method: "POST",
+      body: { password: deletePassword.value },
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
+    });
+
+    deleteResult.value = response?.deleted ? "deleted" : "requested";
+    deletePassword.value = "";
+  } catch (error: any) {
+    const fetchError = error as FetchError;
+    if (fetchError?.response?.status === 403 && fetchError?.data?.code === "INCORRECT_PASSWORD") {
+      deleteError.value = isSw.value ? "Nenosiri si sahihi." : "That password is incorrect.";
+    } else {
+      deleteError.value = isSw.value
+        ? "Ombi limeshindwa. Jaribu tena."
+        : "Couldn't request deletion. Try again.";
+    }
+  } finally {
+    deleteBusy.value = false;
+  }
+};
+
 const getLevel = async () => {
   try {
     const response = await $fetch<Level[]>(apiDocs.levels.getLevels, {
@@ -1013,6 +1069,119 @@ const discardChanges = () => {
         </button>
       </div>
     </Transition>
+
+    <div class="mt-8 border-t pt-4">
+      <button
+        type="button"
+        class="text-sm font-medium text-textGray hover:text-deepBlue"
+        @click="showAccountOptions = !showAccountOptions"
+      >
+        {{ isSw ? "Chaguo za akaunti" : "Account options" }}
+      </button>
+
+      <Transition name="fade">
+        <div v-if="showAccountOptions" class="mt-3">
+          <button
+            type="button"
+            class="text-sm font-medium text-red-600 hover:text-red-700"
+            @click="openDeleteConfirm"
+          >
+            {{ isSw ? "Futa akaunti yangu" : "Delete my account" }}
+          </button>
+        </div>
+      </Transition>
+    </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showDeleteConfirm"
+        class="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        @click.self="dismissDeleteConfirm"
+      >
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" @click="dismissDeleteConfirm" />
+
+        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" @click.stop>
+          <div class="px-6 py-5">
+            <h2 class="text-lg font-bold text-gray-900 mb-3">
+              {{
+                deleteResult === "deleted"
+                  ? (isSw ? "Akaunti imefutwa" : "Account deleted")
+                  : deleteResult === "requested"
+                    ? (isSw ? "Ombi limepokelewa" : "Deletion requested")
+                    : (isSw ? "Futa akaunti yangu" : "Delete my account")
+              }}
+            </h2>
+
+            <template v-if="deleteResult === 'deleted'">
+              <p class="text-gray-700">
+                {{ isSw ? "Akaunti yako imefutwa kabisa." : "Your account has been permanently deleted." }}
+              </p>
+            </template>
+            <template v-else-if="deleteResult === 'requested'">
+              <p class="text-gray-700">
+                {{
+                  isSw
+                    ? "Ufutaji unaendelea. Umetoka kwenye akaunti yako."
+                    : "Your account is closed. Deletion is still being processed."
+                }}
+              </p>
+            </template>
+            <template v-else>
+              <p class="text-gray-700 mb-4">
+                {{
+                  isSw
+                    ? "Hatua hii itafuta kabisa akaunti yako, maendeleo ya masomo na historia ya mazungumzo. Huwezi kutendua uamuzi huu."
+                    : "This permanently deletes your account and chat history. This action can't be undone."
+                }}
+              </p>
+              <label for="delete-account-password" class="block mb-1 text-xs font-medium text-textGray">
+                {{ isSw ? "Nenosiri lako" : "Your password" }}
+              </label>
+              <input
+                id="delete-account-password"
+                v-model="deletePassword"
+                type="password"
+                :disabled="deleteBusy"
+                class="w-full px-3 py-2 border rounded-lg border-textGray focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                @keyup.enter="confirmAccountDeletion"
+              />
+              <p v-if="deleteError" class="mt-2 text-sm text-red-600">{{ deleteError }}</p>
+            </template>
+          </div>
+
+          <div class="px-6 py-4 bg-gray-50 border-t flex gap-3">
+            <button
+              v-if="!deleteResult"
+              type="button"
+              :disabled="deleteBusy"
+              class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50"
+              @click="dismissDeleteConfirm"
+            >
+              {{ isSw ? "Ghairi" : "Cancel" }}
+            </button>
+            <button
+              v-if="!deleteResult"
+              type="button"
+              :disabled="!deletePassword || deleteBusy"
+              class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-60"
+              @click="confirmAccountDeletion"
+            >
+              {{ deleteBusy ? (isSw ? "Inafuta…" : "Deleting…") : (isSw ? "Futa akaunti yangu" : "Delete my account") }}
+            </button>
+            <button
+              v-else
+              type="button"
+              class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r to-oceanBlue from-deepBlue"
+              @click="dismissDeleteConfirm"
+            >
+              {{ isSw ? "Sawa" : "Done" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 

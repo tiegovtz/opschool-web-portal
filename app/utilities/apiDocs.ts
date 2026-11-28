@@ -54,6 +54,7 @@ export const createApiDocs = (apiBaseURL: string, assetBaseURL = apiBaseURL) => 
     forgotPasswordStudent: `${baseURL}/auth/forgot-password-student`,
     resetPassword: `${baseURL}/auth/reset-password`,
     changePassword: `${baseURL}/auth/change-password`,
+    deleteAccount: `${baseURL}/auth/profile/deletion`,
     userExists: `${baseURL}/auth/user-exists`,
     studentInfo: `${baseURL}/auth/students/info`,
     primaryStudentInfo: (premNumber: string | number): string =>
